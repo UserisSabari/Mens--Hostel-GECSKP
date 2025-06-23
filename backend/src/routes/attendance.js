@@ -11,6 +11,31 @@ router.post('/mark', async (req, res) => {
     if (!userId || !date || !meals) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+
+    // --- Date Validation ---
+    const requestedDate = new Date(date);
+    requestedDate.setHours(0, 0, 0, 0);
+
+    const deadline = new Date(requestedDate);
+    deadline.setDate(requestedDate.getDate() - 1);
+    deadline.setHours(19, 0, 0, 0); // Deadline is 7 PM the day before.
+
+    const now = new Date();
+
+    if (now > deadline) {
+      return res.status(400).json({ message: `Deadline to mark for ${date} has passed.` });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+
+    if (requestedDate > sevenDaysFromNow) {
+      return res.status(400).json({ message: "Cannot mark attendance more than 7 days in advance." });
+    }
+    // --- End Validation ---
+
     // Upsert attendance (update if exists, insert if not)
     const attendance = await Attendance.findOneAndUpdate(
       { userId, date },
