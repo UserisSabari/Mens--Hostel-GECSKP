@@ -50,7 +50,7 @@ export default function Sidebar() {
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-4/5 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} md:static md:translate-x-0`}
+        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} md:static md:translate-x-0`}
       >
         <div className="flex-1 flex flex-col gap-1 mt-4 px-2 overflow-y-auto">
           {navLinks.map(link => {
@@ -78,8 +78,11 @@ export default function Sidebar() {
               Logout
             </button>
           )}
-          <div className="w-full text-[12px] bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 leading-tight text-left px-2 select-none pt-2">
-            Made by Sabari &amp; Roomies 2.0
+          <div className="w-full text-lg leading-tight text-left px-2 select-none pt-2 drop-shadow-sm">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-pink-500">Made by </span>
+            <span className="text-black">Sabari</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-pink-500"> &amp;</span><br />
+            <span className="text-black">Roomies 2.0</span>
           </div>
         </div>
       </aside>
