@@ -7,6 +7,20 @@
 /frontend/.next/
 /frontend/out/
 /backend/dist/
+/frontend/build
+
+# Yarn/PNPM/Other package managers
+/frontend/.pnp
+/frontend/.pnp.*
+/frontend/.yarn/*
+!/frontend/.yarn/patches
+!/frontend/.yarn/plugins
+!/frontend/.yarn/releases
+!/frontend/.yarn/versions
+/frontend/.pnpm-debug.log*
+
+# Testing
+/frontend/coverage
 
 # Environment variables - IMPORTANT: Do not commit secrets!
 .env
@@ -44,3 +58,11 @@ Thumbs.db
 
 # Next.js specific
 next-env.d.ts
+/frontend/next-env.d.ts
+/frontend/.tsbuildinfo
+
+# Misc
+*.pem
+
+# Vercel
+/frontend/.vercel
