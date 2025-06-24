@@ -9,14 +9,15 @@ const navLinks = [
   { href: "/login", label: "Mess Login", hideWhenLoggedIn: true },
   { href: "/dashboard", label: "Dashboard", showWhenLoggedIn: true },
   { href: "/mess-bill", label: "Mess Bill" },
-  { href: "/notifications", label: "Notifications" },
   { href: "/rules", label: "Rules" },
+  { href: "/notifications", label: "Notifications" },
+  
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn } = useAuth();
+  const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -24,7 +25,7 @@ export default function Sidebar() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || loading) return null;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -50,7 +51,7 @@ export default function Sidebar() {
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"} md:static md:translate-x-0`}
+        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <div className="flex-1 flex flex-col gap-1 mt-4 px-2 overflow-y-auto">
           {navLinks.map(link => {

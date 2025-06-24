@@ -15,9 +15,10 @@ function parseJwt(token: string) {
 export default function DashboardPage() {
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn } = useAuth();
+  const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
 
   useEffect(() => {
+    if (loading) return; // Wait for auth to hydrate
     if (!isLoggedIn) {
       router.replace("/login");
       return;
@@ -40,13 +41,21 @@ export default function DashboardPage() {
       email: decoded.email || "",
       role: decoded.role || "student",
     });
-  }, [isLoggedIn, router, setIsLoggedIn]);
+  }, [isLoggedIn, loading, router, setIsLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
     router.push("/login");
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return null; // Don't show anything if not logged in

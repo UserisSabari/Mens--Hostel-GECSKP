@@ -4,15 +4,18 @@ import { createContext, useContext, useEffect, useState } from "react";
 type AuthContextType = {
   isLoggedIn: boolean;
   setIsLoggedIn: (v: boolean) => void;
+  loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("token"));
+    setLoading(false);
     // Listen for storage changes (cross-tab logout/login)
     const handler = () => setIsLoggedIn(!!localStorage.getItem("token"));
     window.addEventListener("storage", handler);
@@ -20,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, loading }}>
       {children}
     </AuthContext.Provider>
   );
