@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, Dispatch, SetStateAction } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
@@ -14,18 +14,22 @@ const navLinks = [
   
 ];
 
-export default function Sidebar() {
+type SidebarProps = {
+  sidebarOpen: boolean;
+  setSidebarOpen: Dispatch<SetStateAction<boolean>>;
+};
+
+export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // This effect can be used for other side-effects if needed,
+    // but the mounted state is no longer required for visibility control.
   }, []);
 
-  if (!mounted || loading) return null;
+  if (loading) return null; // Simplified loading state check
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -35,23 +39,13 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Hamburger for mobile */}
-      <button
-        className="fixed top-4 left-4 z-50 md:hidden p-2 bg-transparent border-none shadow-none focus:outline-none"
-        onClick={() => setOpen(o => !o)}
-        aria-label="Toggle sidebar"
-      >
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
       {/* Overlay for mobile */}
-      {open && (
-        <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setOpen(false)} />
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <div className="flex-1 flex flex-col gap-1 mt-4 px-2 overflow-y-auto">
           {navLinks.map(link => {
@@ -62,7 +56,7 @@ export default function Sidebar() {
                 key={link.href}
                 href={link.href}
                 className={`rounded px-3 py-2 font-medium transition-colors text-gray-700 hover:bg-indigo-200 hover:text-indigo-900 focus:bg-indigo-300 focus:text-indigo-900 active:bg-indigo-300 active:text-indigo-900 ${pathname === link.href ? "bg-indigo-100 text-indigo-700" : ""}`}
-                onClick={() => setOpen(false)}
+                onClick={() => setSidebarOpen(false)}
               >
                 {link.label}
               </Link>
