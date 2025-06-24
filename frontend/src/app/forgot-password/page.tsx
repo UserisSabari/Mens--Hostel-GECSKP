@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import axios from "axios";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,16 +16,13 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const res = await axios.post("http://localhost:5000/api/auth/forgot-password", {
+        email,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      setMessage(data.message);
+      setMessage(res.data.message);
     } catch (err: any) {
-      setError(err.message);
+      const errorMessage = err.response?.data?.message || "An unexpected error occurred.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -49,13 +47,13 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-            disabled={loading}
+            disabled={loading || !!message}
           >
             {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
-        {message && <div className="mt-4 text-center text-green-600">{message}</div>}
-        {error && <div className="mt-4 text-center text-red-600">{error}</div>}
+        {message && <div className="mt-4 p-3 bg-green-100 text-green-700 border border-green-200 rounded-lg">{message}</div>}
+        {error && <div className="mt-4 p-3 bg-red-100 text-red-700 border border-red-200 rounded-lg">{error}</div>}
         <div className="mt-6 text-center">
           <Link href="/login" className="text-indigo-600 hover:underline">
             &larr; Back to Login
