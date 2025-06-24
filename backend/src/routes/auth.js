@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -60,63 +61,86 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
+
+    // IMPORTANT: Always send a generic success message
+    // This prevents attackers from checking which emails are registered.
     if (!user) {
-      return res.status(404).json({ message: 'User with that email does not exist.' });
+      return res.json({ message: 'If your email is registered, you will receive a password reset link.' });
     }
 
     // Generate token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Hash token and set to user
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
 
     await user.save();
 
-    // In a real app, you would send an email. For now, we log it.
-    const resetURL = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
-    console.log('Password Reset URL:', resetURL);
-    // TODO: Send email with nodemailer
+    // Create reset URL
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    res.json({ message: 'Password reset link has been sent (check console).' });
+    // --- Send Email ---
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: `
+        <h1>Password Reset Request</h1>
+        <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
+        <p>Please click on the following link, or paste it into your browser to complete the process:</p>
+        <a href="${resetURL}">${resetURL}</a>
+        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+        <p>This link is valid for 30 minutes.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    // --- End Send Email ---
+
+    res.json({ message: 'If your email is registered, you will receive a password reset link.' });
+
   } catch (err) {
-    console.error(err);
-    // Invalidate token if something goes wrong
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-    res.status(500).json({ message: 'Error sending password reset link.' });
+    console.error('FORGOT PASSWORD ERROR:', err);
+    // Even if something fails, send a generic response to the user
+    res.status(500).json({ message: 'An internal error occurred.' });
   }
 });
 
 // Reset Password
 router.post('/reset-password/:token', async (req, res) => {
   try {
-    // 1. Get user based on the token
+    // 1. Get user based on the hashed token
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
     const user = await User.findOne({
-      passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: Date.now() },
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }, // Check if token is not expired
     });
 
-    // 2. If token has not expired, and there is user, set the new password
+    // 2. If token is invalid or expired
     if (!user) {
       return res.status(400).json({ message: 'Token is invalid or has expired.' });
     }
 
-    user.password = await bcrypt.hash(req.body.password, 10);
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    // 3. Set the new password
+    user.password = req.body.password; // The pre-save hook will hash it
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
     await user.save();
 
-    // 3. Log the user in, send JWT
-    const token = jwt.sign(
-      { userId: user._id, role: user.role, name: user.name, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    // 4. Send success response
+    res.json({ message: 'Password has been reset successfully.' });
 
-    res.json({ token, user: { name: user.name, email: user.email, role: user.role } });
   } catch (err) {
-    console.error(err);
+    console.error('RESET PASSWORD ERROR:', err);
     res.status(500).json({ message: 'Error resetting password.' });
   }
 });
