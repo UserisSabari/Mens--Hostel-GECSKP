@@ -1,5 +1,7 @@
 const express = require('express');
 const Attendance = require('../models/Attendance');
+const User = require('../models/User');
+const { auth, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -62,6 +64,43 @@ router.get('/month', async (req, res) => {
     res.json({ attendance });
   } catch (err) {
     console.error('Attendance fetch error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/attendance/admin/summary?date=YYYY-MM-DD
+router.get('/admin/summary', auth, adminOnly, async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ message: 'Date is required' });
+    // Get all users (students only)
+    const users = await User.find({ role: 'student' });
+    // Get all attendance records for the date
+    const attendanceRecords = await Attendance.find({ date });
+    // Map userId to attendance
+    const attendanceMap = {};
+    attendanceRecords.forEach(a => { attendanceMap[a.userId.toString()] = a; });
+    // Prepare details and summary
+    let summary = { morning: 0, noon: 0, night: 0 };
+    const details = users.map(user => {
+      const att = attendanceMap[user._id.toString()];
+      const morning = att ? !att.meals.morning : false;
+      const noon = att ? !att.meals.noon : false;
+      const night = att ? !att.meals.night : false;
+      if (morning) summary.morning++;
+      if (noon) summary.noon++;
+      if (night) summary.night++;
+      return {
+        name: user.name,
+        email: user.email,
+        morning,
+        noon,
+        night
+      };
+    });
+    res.json({ date, summary, details });
+  } catch (err) {
+    console.error('Admin summary error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
