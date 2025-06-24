@@ -21,7 +21,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50`}>
         <AuthProvider>
           <Header />
-          <main className="pt-14 md:pl-56">
+          <main className="pt-14 md:pl-56 bg-white min-h-screen">
             {children}
           </main>
         </AuthProvider>
