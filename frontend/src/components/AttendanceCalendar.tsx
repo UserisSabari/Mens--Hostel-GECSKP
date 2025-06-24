@@ -97,12 +97,32 @@ export default function AttendanceCalendar() {
 
   // UI color mapping
   const statusStyles: Record<string, string> = {
-    full: "bg-green-400 border border-green-600",
-    partial: "bg-yellow-300 border border-yellow-400",
-    messcut: "bg-gray-400 border border-gray-500",
-    unmarked: "bg-gray-50 border border-gray-200",
-    disabled: "bg-gray-100 text-gray-300 border border-gray-100 cursor-not-allowed",
-    past: "", // no special style for past dates, use normal style
+    full: "bg-green-400 border-green-500 text-white",
+    partial: "bg-yellow-300 border-yellow-400 text-yellow-800",
+    messcut: "bg-gray-400 border-gray-500 text-white",
+    unmarked: "bg-white border-gray-300 text-gray-800",
+    disabled: "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed",
+  };
+
+  const isMarkable = (dateStr: string) => {
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dayDate = new Date(y, m - 1, d);
+    dayDate.setHours(0, 0, 0, 0);
+
+    // Deadline is 7pm the day before
+    const deadline = new Date(dayDate);
+    deadline.setDate(dayDate.getDate() - 1);
+    deadline.setHours(19, 0, 0, 0);
+
+    // Window is up to 7 days from today (inclusive of today)
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    
+    return now <= deadline && dayDate >= today && dayDate <= sevenDaysFromNow;
   };
 
   return (
@@ -157,41 +177,23 @@ export default function AttendanceCalendar() {
           {daysArray.map(day => {
             const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const status = getStatus(dateStr);
-
-            // --- Date Disabling Logic ---
-            const now = new Date();
-            const [y, m, d] = dateStr.split('-').map(Number);
-            const dayDate = new Date(y, m - 1, d); // Use local timezone
-
-            // Deadline is 7pm the day before
-            const deadline = new Date(dayDate);
-            deadline.setDate(dayDate.getDate() - 1);
-            deadline.setHours(19, 0, 0, 0);
-
-            const isPastDeadline = now > deadline;
-
-            // Window is up to 7 days from today
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const sevenDaysFromNow = new Date(today);
-            sevenDaysFromNow.setDate(today.getDate() + 7);
-
-            const isOutsideWindow = dayDate < today || dayDate > sevenDaysFromNow;
-            const isPast = false; // treat all dates as normal for style
-
-            const isClickable = !isPastDeadline && !isOutsideWindow;
-            // --- End Logic ---
+            const canBeMarked = isMarkable(dateStr);
 
             let style = statusStyles[status];
-            if (!isClickable) style = statusStyles["disabled"];
+            if (!canBeMarked && status === "unmarked") {
+              style = statusStyles["disabled"];
+            }
+
+            const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
 
             return (
               <button
                 key={day}
-                className={`aspect-square w-11 h-11 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center border transition-all duration-150 focus:ring-2 focus:ring-indigo-400 ${style} text-base sm:text-lg m-0.5 font-semibold select-none`}
-                onClick={() => isClickable && openModal(dateStr)}
-                disabled={loading || !isClickable}
-                style={{ padding: '0.75rem' }}
+                className={`aspect-square w-11 h-11 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center border transition-all duration-150 focus:ring-2 focus:ring-indigo-400 ${style} text-base sm:text-lg m-0.5 font-semibold select-none ${
+                  canBeMarked ? "cursor-pointer hover:bg-indigo-100 hover:shadow-md" : "cursor-not-allowed"
+                } ${isToday ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`}
+                onClick={() => canBeMarked && openModal(dateStr)}
+                disabled={loading || !canBeMarked}
               >
                 {day}
               </button>
