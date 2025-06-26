@@ -55,7 +55,7 @@ export default function Home() {
             Men's Hostel
           </motion.h1>
           <p className="text-sm sm:text-lg text-gray-800 text-center mb-1 font-normal">
-            Welcome to the Men's Hostel of GEC Sreekrishnapuram – a place that over 130 students call their second home. The hostel offers a comfortable and supportive environment for residents to live, learn, and grow together.
+            Welcome to the Mens Hostel of GEC Sreekrishnapuram – a place that over 130 students call their second home. The hostel offers a comfortable and supportive environment for residents to live, learn, and grow together.
           </p>
           <section className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 mb-1">
@@ -119,7 +119,7 @@ export default function Home() {
                   <span className="font-medium">Adhithyan K</span>
                   <span className="font-medium text-indigo-700 ml-1">(Hostel Secretary)</span>
                 </div>
-                <a href="tel:+9198000090" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 98000 090</a>
+                <a href="tel:+919539240174" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 9539240174</a>
               </div>
               {/* Mess Secretary */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 w-full">
@@ -128,7 +128,7 @@ export default function Home() {
                   <span className="font-medium">Adhithyan S R</span>
                   <span className="font-medium text-indigo-700 ml-1">(Mess Secretary)</span>
                 </div>
-                <a href="tel:+9198000090" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 98000 090</a>
+                <a href="tel:+917736631572" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 7736631572</a>
               </div>
             </div>
           </div>
