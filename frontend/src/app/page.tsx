@@ -7,8 +7,18 @@ export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    // Minimum splash duration (1.5s), then hide splash
-    const timer = setTimeout(() => setShowSplash(false), 1500);
+    // Only show splash on first visit
+    const splashShown = typeof window !== 'undefined' && sessionStorage.getItem('mhapp_splash_shown');
+    if (splashShown) {
+      setShowSplash(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('mhapp_splash_shown', '1');
+      }
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
