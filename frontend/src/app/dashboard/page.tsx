@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import { useAuth } from "../../context/AuthContext";
 import Link from 'next/link';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function parseJwt(token: string) {
   try {
@@ -22,6 +24,12 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [monthDetails, setMonthDetails] = useState<any[]>([]);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [calendarYear, setCalendarYear] = useState<number | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState<number | null>(null);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   useEffect(() => {
     if (loading) return; // Wait for auth to hydrate
@@ -83,6 +91,37 @@ export default function DashboardPage() {
     }
   };
 
+  const exportTableToPDF = () => {
+    const doc = new jsPDF();
+    // Table columns
+    const columns = [
+      { header: "Date", dataKey: "date" },
+      { header: "Morning", dataKey: "morning" },
+      { header: "Noon", dataKey: "noon" },
+      { header: "Night", dataKey: "night" },
+    ];
+    // Table rows
+    const year = calendarYear ?? new Date().getFullYear();
+    const month = (calendarMonth ?? new Date().getMonth()); // 0-indexed
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const allDates = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    });
+    const rows = allDates.map(dateStr => {
+      const record = monthDetails.find(d => d.date === dateStr);
+      const meals = record ? record.meals : { morning: true, noon: true, night: true };
+      return {
+        date: dateStr,
+        morning: meals.morning ? "Yes" : "No",
+        noon: meals.noon ? "Yes" : "No",
+        night: meals.night ? "Yes" : "No",
+      };
+    });
+    autoTable(doc, { columns, body: rows });
+    doc.save("attendance-details.pdf");
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -102,7 +141,7 @@ export default function DashboardPage() {
   // --- Admin Dashboard ---
   if (user.role === "admin") {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-12">
+      <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
         <div className="w-full max-w-4xl flex flex-col gap-4 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-2 sm:mt-4 border border-gray-100 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 w-full text-left">Admin Dashboard</h1>
           <div className="flex gap-4 mb-4 w-full">
@@ -174,16 +213,121 @@ export default function DashboardPage() {
   }
 
   // --- Student Dashboard ---
+  let userId = "";
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        userId = JSON.parse(atob(token.split(".")[1])).userId;
+      } catch {
+        userId = "";
+      }
+    }
+  }
+
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-12">
+    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
       {/* User Info Container */}
       <div className="w-full max-w-4xl flex flex-col gap-0 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-2 sm:mt-4 border border-gray-100 mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-0 w-full text-left">Welcome, {user.name}!</h1>
         <span className="text-base text-indigo-600 font-medium w-full text-left mt-0">{user.role}</span>
       </div>
-      {/* Calendar Section - no border or card look for grid */}
+      {/* Calendar/Table Section */}
       <div className="w-full max-w-3xl mx-auto">
-        <AttendanceCalendar />
+        {showCalendar ? (
+          <>
+            <AttendanceCalendar
+              onMonthChange={(year: number, month: number) => {
+                setCalendarYear(year);
+                setCalendarMonth(month);
+              }}
+            />
+            <div className="flex flex-col items-center mt-4">
+              <button
+                className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold text-lg"
+                onClick={async () => {
+                  setDetailsLoading(true);
+                  setDetailsError(null);
+                  setMonthDetails([]);
+                  try {
+                    const token = localStorage.getItem("token");
+                    const year = calendarYear ?? new Date().getFullYear();
+                    const month = (calendarMonth ?? new Date().getMonth()) + 1;
+                    const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+                    const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error("Failed to fetch details");
+                    const data = await res.json();
+                    setMonthDetails(data.attendance || []);
+                    setShowCalendar(false); // Hide calendar, show table
+                  } catch (err: any) {
+                    setDetailsError(err.message || "Unknown error");
+                  } finally {
+                    setDetailsLoading(false);
+                  }
+                }}
+                disabled={detailsLoading}
+              >
+                {detailsLoading ? "Loading..." : "Get My Details"}
+              </button>
+              {detailsError && <div className="text-red-600 font-medium mt-2">{detailsError}</div>}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center mt-4">
+            <div className="flex gap-2 mb-4">
+              <button
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+                onClick={() => setShowCalendar(true)}
+              >
+                Back to Calendar
+              </button>
+              <button
+                className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors"
+                onClick={exportTableToPDF}
+              >
+                Export to PDF
+              </button>
+            </div>
+            <div className="w-full mt-0 overflow-x-auto">
+              <table className="min-w-full border border-gray-200 rounded-lg">
+                <thead className="bg-indigo-100">
+                  <tr>
+                    <th className="px-3 py-2 text-indigo-700">Date</th>
+                    <th className="px-3 py-2 text-indigo-700">Morning</th>
+                    <th className="px-3 py-2 text-indigo-700">Noon</th>
+                    <th className="px-3 py-2 text-indigo-700">Night</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    // Generate all days in the selected month
+                    const year = calendarYear ?? new Date().getFullYear();
+                    const month = (calendarMonth ?? new Date().getMonth()); // 0-indexed
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const allDates = Array.from({ length: daysInMonth }, (_, i) => {
+                      const day = i + 1;
+                      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    });
+                    return allDates.map((dateStr, i) => {
+                      const record = monthDetails.find(d => d.date === dateStr);
+                      const meals = record ? record.meals : { morning: true, noon: true, night: true };
+                      return (
+                        <tr key={i} className="border-t">
+                          <td className="px-3 py-2 text-black text-center">{dateStr}</td>
+                          <td className="px-3 py-2 text-center text-black">{meals.morning ? "✔️" : "❌"}</td>
+                          <td className="px-3 py-2 text-center text-black">{meals.noon ? "✔️" : "❌"}</td>
+                          <td className="px-3 py-2 text-center text-black">{meals.night ? "✔️" : "❌"}</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

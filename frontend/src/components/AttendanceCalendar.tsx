@@ -17,7 +17,12 @@ interface Attendance {
   meals: { morning: boolean; noon: boolean; night: boolean };
 }
 
-export default function AttendanceCalendar() {
+// Add prop type
+interface AttendanceCalendarProps {
+  onMonthChange?: (year: number, month: number) => void;
+}
+
+export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendarProps) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-indexed
@@ -43,11 +48,27 @@ export default function AttendanceCalendar() {
     return null;
   }
 
-  // Fetch attendance for the month
+  // Calculate month navigation limits
+  const current = new Date();
+  const minMonth = new Date(current.getFullYear(), current.getMonth() - 2, 1);
+  const maxMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+  const viewing = new Date(year, month, 1);
+  const isPrevDisabled = viewing <= minMonth;
+  const isNextDisabled = viewing >= maxMonth;
+
+  // Fetch attendance for the month (do not fetch for future months)
   useEffect(() => {
+    if (onMonthChange) onMonthChange(year, month);
     const fetchAttendance = async () => {
       setLoading(true);
       const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
+      // Only fetch if not in the future
+      const now = new Date();
+      if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth())) {
+        setAttendance([]);
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`);
       const data = await res.json();
       setAttendance(data.attendance || []);
@@ -95,9 +116,8 @@ export default function AttendanceCalendar() {
     return "partial";
   };
 
-  // UI color mapping
+  // UI color mapping (no green for full)
   const statusStyles: Record<string, string> = {
-    full: "bg-green-400 border-green-500 text-white",
     partial: "bg-yellow-300 border-yellow-400 text-yellow-800",
     messcut: "bg-gray-400 border-gray-500 text-white",
     unmarked: "bg-white border-gray-300 text-gray-800",
@@ -130,11 +150,13 @@ export default function AttendanceCalendar() {
       <div className="flex justify-between items-center mb-4 px-0">
         <button
           onClick={() => {
+            if (isPrevDisabled) return;
             const newDate = new Date(year, month - 1, 1);
             setMonth(newDate.getMonth());
             setYear(newDate.getFullYear());
           }}
-          className="p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className={`p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${isPrevDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+          disabled={isPrevDisabled}
         >
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M15 19l-7-7 7-7" />
@@ -145,11 +167,13 @@ export default function AttendanceCalendar() {
         </h2>
         <button
           onClick={() => {
+            if (isNextDisabled) return;
             const newDate = new Date(year, month + 1, 1);
             setMonth(newDate.getMonth());
             setYear(newDate.getFullYear());
           }}
-          className="p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className={`p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${isNextDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+          disabled={isNextDisabled}
         >
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M9 5l7 7-7 7" />
@@ -158,7 +182,6 @@ export default function AttendanceCalendar() {
       </div>
       {/* Legend */}
       <div className="flex flex-wrap justify-center gap-4 mb-4 text-xs sm:text-sm px-0 py-2">
-        <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-green-400 border border-green-600 shadow-sm"></span> <span className="text-gray-700">Full</span></div>
         <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-yellow-300 border border-yellow-400 shadow-sm"></span> <span className="text-gray-700">Partial</span></div>
         <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-gray-400 border border-gray-500 shadow-sm"></span> <span className="text-gray-700">Mess Cut</span></div>
         <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-gray-50 border border-gray-200 shadow-sm"></span> <span className="text-gray-700">Unmarked</span></div>
@@ -203,7 +226,7 @@ export default function AttendanceCalendar() {
       </div>
       {/* Modal */}
       {selectedDate && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-2">
+        <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50 px-2">
           <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-2xl w-full max-w-xs flex flex-col gap-6 border border-indigo-100">
             <div className="mb-2">
               <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 text-center mb-1">

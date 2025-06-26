@@ -22,7 +22,7 @@ export default function RootLayout({
         <AuthProvider>
           <Header />
           <main className="pt-14 md:pl-56 bg-white min-h-screen">
-            {children}
+        {children}
           </main>
         </AuthProvider>
       </body>
