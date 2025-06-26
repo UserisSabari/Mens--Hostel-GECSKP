@@ -228,7 +228,7 @@ export default function DashboardPage() {
   if (user.role === "admin") {
     return (
       <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
-        <div className="w-full max-w-4xl flex flex-col gap-4 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-2 sm:mt-4 border border-gray-100 mb-4">
+        <div className="w-full max-w-4xl flex flex-col gap-4 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-16 border border-gray-100 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 w-full text-left">Admin Dashboard</h1>
           {userCount !== null && (
             <div className="w-full text-lg font-semibold text-indigo-700 mb-2 text-left">Total Students: {userCount}</div>
