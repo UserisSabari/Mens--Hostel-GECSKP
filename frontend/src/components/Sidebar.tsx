@@ -42,17 +42,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
     <>
       {/* Overlay and Close button for mobile */}
       {sidebarOpen && (
-        <>
-          <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
-          {/* Large, simple close button outside sidebar */}
-          <button
-            className="fixed top-4 left-4 z-50 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-lg border border-gray-200 text-3xl text-gray-700 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            &times;
-          </button>
-        </>
+        <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
       {/* Sidebar */}
       <aside
