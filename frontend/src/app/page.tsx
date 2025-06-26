@@ -1,3 +1,4 @@
+import React from 'react';
 import { HiOutlineUserGroup, HiOutlineMail, HiOutlinePhone, HiOutlineClipboardList, HiOutlineUserCircle } from 'react-icons/hi';
 
 export default function Home() {

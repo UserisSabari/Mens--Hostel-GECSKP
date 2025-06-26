@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
@@ -6,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import Link from 'next/link';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { monthNames } from "@/constants/months";
 
 function parseJwt(token: string) {
   try {
@@ -15,8 +17,32 @@ function parseJwt(token: string) {
   }
 }
 
+function useCurrentUser() {
+  const [user, setUser] = useState<{ name: string; email: string; role: string; userId: string } | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUser({
+        name: decoded.name || "",
+        email: decoded.email || "",
+        role: decoded.role || "student",
+        userId: decoded.userId || "",
+      });
+    } catch {
+      setUser(null);
+    }
+  }, []);
+  return user;
+}
+
+// Attendance marking window config
+const ATTENDANCE_WINDOW_DAYS = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_WINDOW_DAYS || "7", 10);
+const ATTENDANCE_DEADLINE_HOUR = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_DEADLINE_HOUR || "19", 10);
+
 export default function DashboardPage() {
-  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [date, setDate] = useState<string>("");
   const [summary, setSummary] = useState<any>(null);
   const [details, setDetails] = useState<any[]>([]);
@@ -30,32 +56,9 @@ export default function DashboardPage() {
   const [calendarYear, setCalendarYear] = useState<number | null>(null);
   const [calendarMonth, setCalendarMonth] = useState<number | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
+  const [userCount, setUserCount] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (loading) return; // Wait for auth to hydrate
-    if (!isLoggedIn) {
-      router.replace("/login");
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setIsLoggedIn(false);
-      router.replace("/login");
-      return;
-    }
-    const decoded = parseJwt(token);
-    if (!decoded) {
-      localStorage.removeItem("token");
-      setIsLoggedIn(false);
-      router.replace("/login");
-      return;
-    }
-    setUser({
-      name: decoded.name || "Sabari",
-      email: decoded.email || "",
-      role: decoded.role || "student",
-    });
-  }, [isLoggedIn, loading, router, setIsLoggedIn]);
+  const user = useCurrentUser();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -93,6 +96,11 @@ export default function DashboardPage() {
 
   const exportTableToPDF = () => {
     const doc = new jsPDF();
+    // Add generated date in the left corner
+    const generatedDate = new Date().toLocaleString();
+    const userName = user?.name || '';
+    doc.setFontSize(8);
+    doc.text(`Generated: ${generatedDate} | Name: ${userName}`, 10, 10);
     // Table columns
     const columns = [
       { header: "Date", dataKey: "date" },
@@ -113,18 +121,92 @@ export default function DashboardPage() {
       const meals = record ? record.meals : { morning: true, noon: true, night: true };
       return {
         date: dateStr,
-        morning: meals.morning ? "Yes" : "No",
-        noon: meals.noon ? "Yes" : "No",
-        night: meals.night ? "Yes" : "No",
+        morning: meals.morning ? { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } } : { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } },
+        noon: meals.noon ? { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } } : { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } },
+        night: meals.night ? { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } } : { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } },
       };
     });
-    autoTable(doc, { columns, body: rows });
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
-    ];
+    autoTable(doc, {
+      startY: 18,
+      columns,
+      body: rows,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [99, 102, 241] },
+      didParseCell: function (data) {
+        const raw = data.cell.raw as any;
+        if (raw && typeof raw === 'object' && raw.styles) {
+          data.cell.styles.textColor = raw.styles.textColor;
+          data.cell.text = raw.text;
+        }
+      },
+    });
     const monthName = monthNames[month];
-    doc.save(`attendance-details-${monthName}.pdf`);
+    doc.save(`attendance-details-${monthName}-${year}.pdf`);
   };
+
+  // Add export summary to PDF
+  const exportSummaryToPDF = () => {
+    if (!summary || !date) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Mess Cut Summary", 14, 18);
+    doc.setFontSize(12);
+    doc.text(`Date: ${date}`, 14, 30);
+    doc.text(`Morning: ${summary.morning}`, 14, 40);
+    doc.text(`Noon: ${summary.noon}`, 14, 50);
+    doc.text(`Night: ${summary.night}`, 14, 60);
+    // Add table of details
+    if (details && details.length > 0) {
+      const columns = [
+        { header: "Sl No", dataKey: "slno" },
+        { header: "Name", dataKey: "name" },
+        { header: "Morning", dataKey: "morning" },
+        { header: "Noon", dataKey: "noon" },
+        { header: "Night", dataKey: "night" },
+      ];
+      const rows = details.map((d, i) => ({
+        slno: i + 1,
+        name: d.name,
+        morning: d.morning ? { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } } : { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } },
+        noon: d.noon ? { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } } : { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } },
+        night: d.night ? { text: 'No', styles: { textColor: [220, 38, 38] as [number, number, number] } } : { text: 'Yes', styles: { textColor: [34, 197, 94] as [number, number, number] } },
+      }));
+      autoTable(doc, {
+        startY: 70,
+        columns,
+        body: rows,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [99, 102, 241] },
+        didParseCell: function (data) {
+          const raw = data.cell.raw as any;
+          if (raw && typeof raw === 'object' && raw.styles) {
+            data.cell.styles.textColor = raw.styles.textColor;
+            data.cell.text = raw.text;
+          }
+        },
+      });
+    }
+    doc.save(`mess-cut-summary-${date}.pdf`);
+  };
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      const fetchUserCount = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch("http://localhost:5000/api/auth/users", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error("Failed to fetch user count");
+          const data = await res.json();
+          setUserCount(data.users.length);
+        } catch {
+          setUserCount(null);
+        }
+      };
+      fetchUserCount();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -148,14 +230,25 @@ export default function DashboardPage() {
       <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
         <div className="w-full max-w-4xl flex flex-col gap-4 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-2 sm:mt-4 border border-gray-100 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 w-full text-left">Admin Dashboard</h1>
+          {userCount !== null && (
+            <div className="w-full text-lg font-semibold text-indigo-700 mb-2 text-left">Total Students: {userCount}</div>
+          )}
           <div className="flex gap-4 mb-4 w-full">
             <Link href="/dashboard/create-user">
               <button className="bg-indigo-500 text-white px-4 py-2 rounded shadow hover:bg-indigo-600 transition-colors">
                 Create New User
               </button>
             </Link>
-            <button className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors" disabled>
+            {/* Hide or explain Add Notification button */}
+            {/* <button className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors" disabled>
               Add Notification
+            </button> */}
+            <button
+              className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors relative group"
+              disabled
+            >
+              Add Notification
+              <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">Coming soon</span>
             </button>
           </div>
           <div className="w-full flex flex-col sm:flex-row gap-4 items-center mb-4">
@@ -177,7 +270,16 @@ export default function DashboardPage() {
           {error && <div className="text-red-600 font-medium mb-2">{error}</div>}
           {summary && (
             <div className="w-full bg-indigo-50 rounded-lg p-4 mb-4">
-              <h2 className="text-lg font-semibold text-indigo-700 mb-2">Summary of Mess Cuts</h2>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-lg font-semibold text-indigo-700">Summary of Mess Cuts</h2>
+                <button
+                  className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 transition-colors text-sm"
+                  onClick={exportSummaryToPDF}
+                >
+                  Export to PDF
+                </button>
+              </div>
+              <div className="text-gray-700 mb-2">Selected Date: <span className="font-semibold">{date}</span></div>
               <div className="flex gap-8">
                 <div className="text-black">Morning: <span className="font-bold text-black">{summary.morning}</span></div>
                 <div className="text-black">Noon: <span className="font-bold text-black">{summary.noon}</span></div>
@@ -202,9 +304,9 @@ export default function DashboardPage() {
                     <tr key={i} className="border-t">
                       <td className="px-3 py-2 text-black text-center">{i + 1}</td>
                       <td className="px-3 py-2 text-black">{d.name}</td>
-                      <td className="px-3 py-2 text-center text-black">{d.morning ? "❌" : "✔️"}</td>
-                      <td className="px-3 py-2 text-center text-black">{d.noon ? "❌" : "✔️"}</td>
-                      <td className="px-3 py-2 text-center text-black">{d.night ? "❌" : "✔️"}</td>
+                      <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
+                      <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
+                      <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -217,17 +319,7 @@ export default function DashboardPage() {
   }
 
   // --- Student Dashboard ---
-  let userId = "";
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        userId = JSON.parse(atob(token.split(".")[1])).userId;
-      } catch {
-        userId = "";
-      }
-    }
-  }
+  const userId = user?.userId || "";
 
   return (
     <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
@@ -320,9 +412,9 @@ export default function DashboardPage() {
                       return (
                         <tr key={i} className="border-t">
                           <td className="px-3 py-2 text-black text-center">{dateStr}</td>
-                          <td className="px-3 py-2 text-center text-black">{meals.morning ? "✔️" : "❌"}</td>
-                          <td className="px-3 py-2 text-center text-black">{meals.noon ? "✔️" : "❌"}</td>
-                          <td className="px-3 py-2 text-center text-black">{meals.night ? "✔️" : "❌"}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${meals.morning ? 'text-green-600' : 'text-red-600'}`}>{meals.morning ? 'Yes' : 'No'}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${meals.noon ? 'text-green-600' : 'text-red-600'}`}>{meals.noon ? 'Yes' : 'No'}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${meals.night ? 'text-green-600' : 'text-red-600'}`}>{meals.night ? 'Yes' : 'No'}</td>
                         </tr>
                       );
                     });

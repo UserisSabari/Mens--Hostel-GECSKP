@@ -1,8 +1,11 @@
 "use client";
+import React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import toast from "react-hot-toast";
+import { validateEmail, validatePassword } from "@/utils/validation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,6 +17,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!validatePassword(password)) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
@@ -28,8 +39,9 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       setIsLoggedIn(true);
       router.push("/dashboard");
+      toast.success("Login successful!");
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -68,14 +80,9 @@ export default function LoginPage() {
               className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
               disabled={loading}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Logging in...</span>) : "Login"}
             </button>
           </form>
-          {error && (
-            <div className="mt-4 text-center text-red-600 bg-red-100 p-3 rounded-lg font-medium">
-              {error}
-            </div>
-          )}
         </div>
         <div className="mt-6 text-center">
           <Link href="/forgot-password">

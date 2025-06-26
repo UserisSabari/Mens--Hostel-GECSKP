@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, Dispatch, SetStateAction } from "react";
@@ -47,6 +48,14 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       <aside
         className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-2/3 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
+        {/* Close button for mobile */}
+        <button
+          className="absolute top-2 right-2 md:hidden text-gray-700 hover:text-red-600 text-2xl font-bold focus:outline-none"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
+        >
+          &times;
+        </button>
         <div className="flex-1 flex flex-col gap-1 mt-4 px-2 overflow-y-auto">
           {navLinks.map(link => {
             if (link.hideWhenLoggedIn && isLoggedIn) return null;

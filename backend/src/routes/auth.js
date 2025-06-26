@@ -6,9 +6,16 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
+// Stricter rate limit for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many login or password reset attempts, please try again after 15 minutes',
+});
 
 // Register route (admin only)
 router.post('/register', auth, adminOnly, async (req, res) => {
@@ -32,7 +39,7 @@ router.post('/register', auth, adminOnly, async (req, res) => {
 });
 
 // Login route
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -57,7 +64,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Forgot Password
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -115,7 +122,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Reset Password
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', authLimiter, async (req, res) => {
   try {
     // 1. Get user based on the hashed token
     const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
@@ -142,6 +149,16 @@ router.post('/reset-password/:token', async (req, res) => {
   } catch (err) {
     console.error('RESET PASSWORD ERROR:', err);
     res.status(500).json({ message: 'Error resetting password.' });
+  }
+});
+
+// Get all users (admin only)
+router.get('/users', auth, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({ role: 'student' });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 

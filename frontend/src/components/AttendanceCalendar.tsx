@@ -1,5 +1,7 @@
 "use client";
+import React from 'react';
 import { useEffect, useState } from "react";
+import { monthNames } from "@/constants/months";
 
 // Helper to get days in month
 function getDaysInMonth(year: number, month: number) {
@@ -21,6 +23,9 @@ interface Attendance {
 interface AttendanceCalendarProps {
   onMonthChange?: (year: number, month: number) => void;
 }
+
+const ATTENDANCE_WINDOW_DAYS = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_WINDOW_DAYS || "7", 10);
+const ATTENDANCE_DEADLINE_HOUR = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_DEADLINE_HOUR || "19", 10);
 
 export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendarProps) {
   const today = new Date();
@@ -133,16 +138,16 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
     const dayDate = new Date(y, m - 1, d);
     dayDate.setHours(0, 0, 0, 0);
 
-    // Deadline is 7pm the day before
+    // Deadline is configurable
     const deadline = new Date(dayDate);
     deadline.setDate(dayDate.getDate() - 1);
-    deadline.setHours(19, 0, 0, 0);
+    deadline.setHours(ATTENDANCE_DEADLINE_HOUR, 0, 0, 0);
 
-    // Window is up to 7 days from today (inclusive of today)
-    const sevenDaysFromNow = new Date(today);
-    sevenDaysFromNow.setDate(today.getDate() + 7);
+    // Window is up to configurable days from today (inclusive of today)
+    const windowFromNow = new Date(today);
+    windowFromNow.setDate(today.getDate() + ATTENDANCE_WINDOW_DAYS);
     
-    return now <= deadline && dayDate >= today && dayDate <= sevenDaysFromNow;
+    return now <= deadline && dayDate >= today && dayDate <= windowFromNow;
   };
 
   return (
@@ -217,6 +222,8 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
                 } ${isToday ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`}
                 onClick={() => canBeMarked && openModal(dateStr)}
                 disabled={loading || !canBeMarked}
+                aria-label={`Mark attendance for ${dateStr}`}
+                tabIndex={canBeMarked ? 0 : -1}
               >
                 {day}
               </button>

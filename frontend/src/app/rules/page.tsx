@@ -1,6 +1,21 @@
 "use client";
 
+import React from 'react';
+
 export default function RulesPage() {
+  const rules = [
+    "Allotment of rooms is the discretion of the warden. Inmates should stay only in rooms allotted for them. Relocating to other rooms without permission will be treated as a serious violation.",
+    "Each student will be responsible for the furniture available in the rooms",
+    "Inmates should bring their own beddings, buckets, mug, plate, glass and cutleries (if required).",
+    "Rooms are provided with power supply. Electrical installation provided in the rooms should not be tampered with. Any infringement will be dealt with stern action and loss will be recovered from the concerned.",
+    "Students should see that the light and fans are switched off while they are leaving the rooms. Reducing electricity and water consumption is a collective responsibility.",
+    "Students are not permitted to have other electrical equipment such as heater, kettle and iron box inside their rooms. If such electrical equipment is found to be in someone's possession, fine will be levied immediately.",
+    "Inmates are not allowed to bring guests into the hostel without permission of the warden.",
+    "If you want to vacate from hostel, written request should be submitted to the warden. If you just leave without any intimation, you will be treated as an inmate and expenses will be billed against your name as usual.",
+    // Add all rules here
+    
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 flex flex-col items-center p-0 sm:p-8">
       <header className="sticky top-0 z-10 w-full bg-white/90 border-b border-gray-200 py-4 mb-8 shadow-sm">
@@ -10,14 +25,9 @@ export default function RulesPage() {
         <section className="mb-8">
           <h2 className="text-xl font-semibold text-indigo-700 mb-2">Allotment of rooms</h2>
           <ul className="list-disc pl-6 space-y-2 text-gray-800">
-            <li>Allotment of rooms is the discretion of the warden. Inmates should stay only in rooms allotted for them. Relocating to other rooms without permission will be treated as a serious violation.</li>
-            <li>Each student will be responsible for the furniture available in the rooms.</li>
-            <li>Inmates should bring their own beddings, buckets, mug, plate, glass and cutleries (if required).</li>
-            <li>Rooms are provided with power supply. Electrical installation provided in the rooms should not be tampered with. Any infringement will be dealt with stern action and loss will be recovered from the concerned.</li>
-            <li>Students should see that the light and fans are switched off while they are leaving the rooms. Reducing electricity and water consumption is a collective responsibility.</li>
-            <li>Students are not permitted to have other electrical equipment such as heater, kettle and iron box inside their rooms. If such electrical equipment is found to be in someone's possession, fine will be levied immediately.</li>
-            <li>Inmates are not allowed to bring guests into the hostel without permission of the warden.</li>
-            <li>If you want to vacate from hostel, written request should be submitted to the warden. If you just leave without any intimation, you will be treated as an inmate and expenses will be billed against your name as usual.</li>
+            {rules.map((rule, index) => (
+              <li key={index} className="mb-2">{rule}</li>
+            ))}
           </ul>
         </section>
         <section className="mb-8">

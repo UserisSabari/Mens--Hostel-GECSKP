@@ -1,7 +1,10 @@
 "use client";
+import React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { validateEmail, validatePassword } from "@/utils/validation";
 
 export default function CreateUserPage() {
   const [name, setName] = useState("");
@@ -14,6 +17,14 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEmail(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!validatePassword(password)) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -33,10 +44,10 @@ export default function CreateUserPage() {
       if (!res.ok) {
         throw new Error(data.message || "Failed to create user");
       }
-      setSuccess("User created successfully! Redirecting...");
+      toast.success("User created successfully! Redirecting...");
       setTimeout(() => router.push("/dashboard"), 2000);
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -82,11 +93,9 @@ export default function CreateUserPage() {
             className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow"
             disabled={loading}
           >
-            {loading ? "Creating..." : "Create User"}
+            {loading ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Creating...</span>) : "Create User"}
           </button>
         </form>
-        {error && <div className="mt-4 text-center text-red-600 font-medium">{error}</div>}
-        {success && <div className="mt-4 text-center text-green-600 font-medium">{success}</div>}
         <div className="mt-6 text-center">
           <Link href="/dashboard" className="text-indigo-600 hover:underline">
             &larr; Back to Dashboard

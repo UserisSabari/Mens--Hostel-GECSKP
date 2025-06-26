@@ -1,7 +1,9 @@
 "use client";
+import React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,9 +22,11 @@ export default function ForgotPasswordPage() {
         email,
       });
       setMessage(res.data.message);
+      toast.success(res.data.message);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "An unexpected error occurred.";
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -49,11 +53,9 @@ export default function ForgotPasswordPage() {
             className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
             disabled={loading || !!message}
           >
-            {loading ? "Sending..." : "Send Reset Link"}
+            {loading ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Sending...</span>) : "Send Reset Link"}
           </button>
         </form>
-        {message && <div className="mt-4 p-3 bg-green-100 text-green-700 border border-green-200 rounded-lg">{message}</div>}
-        {error && <div className="mt-4 p-3 bg-red-100 text-red-700 border border-red-200 rounded-lg">{error}</div>}
         <div className="mt-6 text-center">
           <Link href="/login" className="text-indigo-600 hover:underline">
             &larr; Back to Login
