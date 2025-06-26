@@ -98,14 +98,15 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: 'Password Reset Request',
+      subject: 'MH App Password Reset Request',
       html: `
-        <h1>Password Reset Request</h1>
+        <h1>Reset your Password</h1>
         <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
         <p>Please click on the following link, or paste it into your browser to complete the process:</p>
         <a href="${resetURL}">${resetURL}</a>
         <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
         <p>This link is valid for 30 minutes.</p>
+        <h2>Admin MH App</h2>
       `,
     };
 
