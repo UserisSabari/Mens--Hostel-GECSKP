@@ -39,8 +39,13 @@ export default function DashboardPage() {
   const [reportStartDate, setReportStartDate] = useState<string>("");
   const [reportEndDate, setReportEndDate] = useState<string>("");
   const [reportLoading, setReportLoading] = useState(false);
-
+  const [navLoading, setNavLoading] = React.useState<{[key: string]: boolean}>({});
   const user = useCurrentUser();
+
+  const handleNav = (key: string, href: string, router: any) => {
+    setNavLoading(l => ({ ...l, [key]: true }));
+    router.push(href);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -237,34 +242,77 @@ export default function DashboardPage() {
   // --- Admin Dashboard ---
   if (user.role === "admin") {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
-        <div className="w-full max-w-4xl flex flex-col gap-4 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-16 border border-gray-100 mb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 w-full text-left">Admin Dashboard</h1>
-          {userCount !== null && (
-            <div className="w-full text-lg font-semibold text-indigo-700 mb-2 text-left">Total Students: {userCount}</div>
-          )}
-          <div className="flex gap-4 mb-4 w-full">
-            <Link href="/dashboard/create-user">
-              <button className="bg-indigo-500 text-white px-4 py-2 rounded shadow hover:bg-indigo-600 transition-colors">
+      <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-4 md:p-6 mt-2">
+        <div className="w-full max-w-4xl flex flex-col gap-6 items-center justify-start mt-8">
+          {/* Heading */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 w-full text-center">Admin Dashboard</h1>
+          {/* User Management Section */}
+          <div className="w-full flex flex-col sm:flex-row gap-4 items-center bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-block bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-lg shadow-sm">{userCount !== null ? userCount : '--'}</span>
+                <span className="text-gray-700 font-medium">Total Students</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <button
+                className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold flex items-center gap-2 justify-center disabled:opacity-60"
+                onClick={() => handleNav('createUser', '/dashboard/create-user', router)}
+                disabled={!!navLoading.createUser}
+              >
+                {navLoading.createUser ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                )}
                 Create New User
               </button>
-            </Link>
-            <button
-              className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors relative group"
-              disabled
-            >
-              Add Notification
-              <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">Coming soon</span>
-            </button>
+            </div>
           </div>
-          <div className="w-full mb-4">
-            <Link href="/dashboard/monthly-report">
-              <button className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition-colors font-semibold w-full">
+          {/* Notifications Section */}
+          <div className="w-full flex flex-col sm:flex-row gap-4 items-center bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+            <div className="flex-1 flex flex-col gap-2">
+              <span className="text-gray-700 font-medium">Notifications</span>
+            </div>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <button
+                className="w-full bg-pink-500 text-white px-4 py-2 rounded-lg shadow hover:bg-pink-600 transition-colors font-semibold flex items-center gap-2 justify-center disabled:opacity-60"
+                onClick={() => handleNav('addNotification', '/notifications', router)}
+                disabled={!!navLoading.addNotification}
+              >
+                {navLoading.addNotification ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                )}
+                Add Notification
+              </button>
+            </div>
+          </div>
+          {/* Reports Section */}
+          <div className="w-full flex flex-col sm:flex-row gap-4 items-center bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+            <div className="flex-1 flex flex-col gap-2">
+              <span className="text-gray-700 font-medium">Reports</span>
+            </div>
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <button
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors font-semibold flex items-center gap-2 justify-center disabled:opacity-60"
+                onClick={() => handleNav('monthlyReport', '/dashboard/monthly-report', router)}
+                disabled={!!navLoading.monthlyReport}
+              >
+                {navLoading.monthlyReport ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                )}
                 Monthly Mess Cut Report
               </button>
-            </Link>
+            </div>
           </div>
-          <div className="w-full flex flex-col sm:flex-row gap-4 items-center mb-4">
+          {/* Attendance Summary Section */}
+          <div className="w-full flex flex-col gap-4 bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100">
+            <span className="text-gray-700 font-medium mb-2">Attendance Summary</span>
+            <div className="flex flex-col sm:flex-row gap-2 items-center w-full mb-2">
             <label className="font-medium text-gray-700">Select Date:</label>
             <input
               type="date"
@@ -273,22 +321,27 @@ export default function DashboardPage() {
               onChange={e => setDate(e.target.value)}
             />
             <button
-              className="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold flex items-center gap-2"
               onClick={handleGetSummary}
               disabled={!date || loadingSummary}
             >
-              {loadingSummary ? "Loading..." : "Get Details"}
+                {loadingSummary ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                ) : (
+                  <span>Get Details</span>
+                )}
             </button>
           </div>
-          {error && <div className="text-red-600 font-medium mb-2">{error}</div>}
+            {error && <div className="text-red-600 font-medium mb-2 text-center">{error}</div>}
           {summary && (
-            <div className="w-full bg-indigo-50 rounded-lg p-4 mb-4">
+              <div className="w-full bg-indigo-50 rounded-lg p-4 mb-4 flex flex-col gap-2 shadow border border-indigo-100">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-lg font-semibold text-indigo-700">Summary of Mess Cuts</h2>
                 <button
-                  className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 transition-colors text-sm"
+                    className="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 transition-colors text-sm flex items-center gap-1"
                   onClick={exportSummaryToPDF}
                 >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                   Export to PDF
                 </button>
               </div>
@@ -301,9 +354,9 @@ export default function DashboardPage() {
             </div>
           )}
           {details.length > 0 && (
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-full border border-gray-200 rounded-lg">
-                <thead className="bg-gray-100">
+              <div className="w-full overflow-x-auto rounded-lg border border-indigo-100">
+                <table className="min-w-full text-sm sm:text-base">
+                  <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr>
                     <th className="px-3 py-2 text-black">Sl No</th>
                     <th className="px-3 py-2 text-left text-black">Name</th>
@@ -315,8 +368,8 @@ export default function DashboardPage() {
                 <tbody>
                   {details.map((d, i) => (
                     <tr key={i} className="border-t">
-                      <td className="px-3 py-2 text-black text-center">{i + 1}</td>
-                      <td className="px-3 py-2 text-black">{d.name}</td>
+                        <td className="px-3 py-2 text-black text-center whitespace-nowrap">{i + 1}</td>
+                        <td className="px-3 py-2 text-black whitespace-nowrap">{d.name}</td>
                       <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
                       <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
                       <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
@@ -326,6 +379,10 @@ export default function DashboardPage() {
               </table>
             </div>
           )}
+            {details.length === 0 && summary && (
+              <div className="text-center text-gray-500 py-6 text-base">No attendance details found for this date.</div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -353,39 +410,39 @@ export default function DashboardPage() {
         {showCalendar ? (
           <>
             <div className="bg-white/90 rounded-2xl shadow-lg p-3 sm:p-6 border border-gray-100">
-              <AttendanceCalendar
-                onMonthChange={(year: number, month: number) => {
-                  setCalendarYear(year);
-                  setCalendarMonth(month);
-                }}
-              />
+            <AttendanceCalendar
+              onMonthChange={(year: number, month: number) => {
+                setCalendarYear(year);
+                setCalendarMonth(month);
+              }}
+            />
               <div className="flex flex-col items-center mt-4 gap-2">
-                <button
+              <button
                   className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold text-base sm:text-lg flex items-center gap-2 w-full sm:w-auto justify-center"
-                  onClick={async () => {
-                    setDetailsLoading(true);
-                    setDetailsError(null);
-                    setMonthDetails([]);
-                    try {
-                      const token = localStorage.getItem("token");
-                      const year = calendarYear ?? new Date().getFullYear();
-                      const month = (calendarMonth ?? new Date().getMonth()) + 1;
-                      const monthStr = `${year}-${String(month).padStart(2, "0")}`;
-                      const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                      if (!res.ok) throw new Error("Failed to fetch details");
-                      const data = await res.json();
-                      setMonthDetails(data.attendance || []);
-                      setShowCalendar(false); // Hide calendar, show table
-                    } catch (err: any) {
-                      setDetailsError(err.message || "Unknown error");
-                    } finally {
-                      setDetailsLoading(false);
-                    }
-                  }}
-                  disabled={detailsLoading}
-                >
+                onClick={async () => {
+                  setDetailsLoading(true);
+                  setDetailsError(null);
+                  setMonthDetails([]);
+                  try {
+                    const token = localStorage.getItem("token");
+                    const year = calendarYear ?? new Date().getFullYear();
+                    const month = (calendarMonth ?? new Date().getMonth()) + 1;
+                    const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+                    const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error("Failed to fetch details");
+                    const data = await res.json();
+                    setMonthDetails(data.attendance || []);
+                    setShowCalendar(false); // Hide calendar, show table
+                  } catch (err: any) {
+                    setDetailsError(err.message || "Unknown error");
+                  } finally {
+                    setDetailsLoading(false);
+                  }
+                }}
+                disabled={detailsLoading}
+              >
                   {detailsLoading ? (
                     <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                   ) : (
@@ -393,7 +450,7 @@ export default function DashboardPage() {
                       <span>Get My Details</span>
                     </>
                   )}
-                </button>
+              </button>
                 {detailsError && <div className="text-red-600 font-medium mt-2 text-center w-full">{detailsError}</div>}
               </div>
             </div>
