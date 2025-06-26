@@ -151,7 +151,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-2 sm:p-8 bg-white">
+    <div className="w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
       <div className="flex justify-between items-center mb-4 px-0">
         <button
           onClick={() => {
@@ -160,14 +160,16 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
             setMonth(newDate.getMonth());
             setYear(newDate.getFullYear());
           }}
-          className={`p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${isPrevDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+          className={`p-2 sm:p-3 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all duration-150 ${isPrevDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
           disabled={isPrevDisabled}
+          aria-label="Previous Month"
+          title="Previous Month"
         >
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 text-center flex-1 tracking-tight drop-shadow-sm bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-500 bg-clip-text text-transparent">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-indigo-900 text-center flex-1 select-none">
           {new Date(year, month).toLocaleString("default", { month: "long" })} {year}
         </h2>
         <button
@@ -177,25 +179,27 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
             setMonth(newDate.getMonth());
             setYear(newDate.getFullYear());
           }}
-          className={`p-2 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${isNextDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+          className={`p-2 sm:p-3 rounded-full hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all duration-150 ${isNextDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
           disabled={isNextDisabled}
+          aria-label="Next Month"
+          title="Next Month"
         >
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-4 mb-4 text-xs sm:text-sm px-0 py-2">
-        <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-yellow-300 border border-yellow-400 shadow-sm"></span> <span className="text-gray-700">Partial</span></div>
-        <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-gray-400 border border-gray-500 shadow-sm"></span> <span className="text-gray-700">Mess Cut</span></div>
-        <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-gray-50 border border-gray-200 shadow-sm"></span> <span className="text-gray-700">Unmarked</span></div>
-        <div className="flex items-center gap-1"><span className="inline-block w-4 h-4 rounded-full bg-gray-100 border border-gray-100 shadow-sm"></span> <span className="text-gray-700">Disabled</span></div>
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 text-xs sm:text-sm px-0 py-2">
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300"><span className="w-2 h-2 rounded-full bg-yellow-300 border border-yellow-400"></span>Partial</span>
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-200 text-gray-700 border border-gray-400"><span className="w-2 h-2 rounded-full bg-gray-400 border border-gray-500"></span>Mess Cut</span>
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200"><span className="w-2 h-2 rounded-full bg-gray-50 border border-gray-200"></span>Unmarked</span>
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-400 border border-gray-200"><span className="w-2 h-2 rounded-full bg-gray-100 border border-gray-100"></span>Disabled</span>
       </div>
       <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-4 sm:gap-6 p-3 sm:p-6 min-h-[320px] w-full max-w-2xl border-t border-l border-gray-200">
+        <div className="grid grid-cols-7 gap-1 sm:gap-4 p-1 sm:p-4 min-h-[320px] w-full max-w-2xl border-t border-l border-gray-200 bg-white rounded-xl">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="text-center font-bold text-indigo-700 text-xs sm:text-base select-none py-2 tracking-wide">
+            <div key={d} className="text-center font-bold text-indigo-700 text-xs sm:text-base select-none py-2 tracking-wide sticky top-0 bg-white z-10">
               {d}
             </div>
           ))}
@@ -217,12 +221,13 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
             return (
               <button
                 key={day}
-                className={`aspect-square w-11 h-11 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center border transition-all duration-150 focus:ring-2 focus:ring-indigo-400 ${style} text-base sm:text-lg m-0.5 font-semibold select-none ${
-                  canBeMarked ? "cursor-pointer hover:bg-indigo-100 hover:shadow-md" : "cursor-not-allowed"
-                } ${isToday ? 'ring-2 ring-indigo-500 shadow-lg' : ''}`}
+                className={`aspect-square w-9 h-9 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center border transition-all duration-150 focus:ring-2 focus:ring-indigo-400 text-base sm:text-lg m-0.5 font-semibold select-none ${
+                  canBeMarked ? "cursor-pointer hover:bg-indigo-50 hover:shadow-md" : "cursor-not-allowed"
+                } ${style} ${isToday ? 'ring-2 ring-pink-500 shadow-lg border-pink-400' : ''}`}
                 onClick={() => canBeMarked && openModal(dateStr)}
                 disabled={loading || !canBeMarked}
                 aria-label={`Mark attendance for ${dateStr}`}
+                title={canBeMarked ? `Mark attendance for ${dateStr}` : 'Not markable'}
                 tabIndex={canBeMarked ? 0 : -1}
               >
                 {day}
@@ -231,10 +236,17 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
           })}
         </div>
       </div>
+      {/* Loading spinner overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-20 rounded-2xl">
+          <svg className="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+        </div>
+      )}
       {/* Modal */}
       {selectedDate && (
-        <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50 px-2">
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-2xl w-full max-w-xs flex flex-col gap-6 border border-indigo-100">
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 px-2">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-2xl w-full max-w-xs flex flex-col gap-6 border border-indigo-100 relative">
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-indigo-600 text-xl font-bold" onClick={() => setSelectedDate(null)} aria-label="Close" disabled={loading}>&times;</button>
             <div className="mb-2">
               <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 text-center mb-1">
                 {(() => {
@@ -268,13 +280,15 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
               ))}
             </div>
             <button
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition text-lg font-semibold shadow mt-2"
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition text-lg font-semibold shadow mt-2 mb-1 active:scale-95"
               onClick={handleMark}
               disabled={loading}
+              aria-label="Save Attendance"
+              title="Save Attendance"
             >
-              {loading ? "Saving..." : "Save"}
+              {loading ? "Saving..." : "Save Attendance"}
             </button>
-            <button className="text-gray-500 underline text-base mt-1" onClick={() => setSelectedDate(null)} disabled={loading}>
+            <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition text-base font-medium shadow border border-gray-200 active:scale-95" onClick={() => setSelectedDate(null)} disabled={loading} aria-label="Cancel" title="Cancel">
               Cancel
             </button>
           </div>

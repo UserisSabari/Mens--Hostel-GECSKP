@@ -3,7 +3,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, useCurrentUser } from "@/context/AuthContext";
 import Link from 'next/link';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -15,27 +15,6 @@ function parseJwt(token: string) {
   } catch {
     return null;
   }
-}
-
-function useCurrentUser() {
-  const [user, setUser] = useState<{ name: string; email: string; role: string; userId: string } | null>(null);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    try {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUser({
-        name: decoded.name || "",
-        email: decoded.email || "",
-        role: decoded.role || "student",
-        userId: decoded.userId || "",
-      });
-    } catch {
-      setUser(null);
-    }
-  }, []);
-  return user;
 }
 
 // Attendance marking window config
@@ -57,6 +36,9 @@ export default function DashboardPage() {
   const [calendarMonth, setCalendarMonth] = useState<number | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
   const [userCount, setUserCount] = useState<number | null>(null);
+  const [reportStartDate, setReportStartDate] = useState<string>("");
+  const [reportEndDate, setReportEndDate] = useState<string>("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   const user = useCurrentUser();
 
@@ -189,6 +171,34 @@ export default function DashboardPage() {
     doc.save(`mess-cut-summary-${date}.pdf`);
   };
 
+  const handleExportMonthlyReport = async () => {
+    if (!reportStartDate || !reportEndDate) return;
+    setReportLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/attendance/admin/monthly-report?startDate=${reportStartDate}&endDate=${reportEndDate}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to generate report");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mess-cut-report-${reportStartDate}_to_${reportEndDate}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download report");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user?.role === "admin") {
       const fetchUserCount = async () => {
@@ -239,10 +249,6 @@ export default function DashboardPage() {
                 Create New User
               </button>
             </Link>
-            {/* Hide or explain Add Notification button */}
-            {/* <button className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors" disabled>
-              Add Notification
-            </button> */}
             <button
               className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600 transition-colors relative group"
               disabled
@@ -250,6 +256,13 @@ export default function DashboardPage() {
               Add Notification
               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">Coming soon</span>
             </button>
+          </div>
+          <div className="w-full mb-4">
+            <Link href="/dashboard/monthly-report">
+              <button className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition-colors font-semibold w-full">
+                Monthly Mess Cut Report
+              </button>
+            </Link>
           </div>
           <div className="w-full flex flex-col sm:flex-row gap-4 items-center mb-4">
             <label className="font-medium text-gray-700">Select Date:</label>
@@ -322,78 +335,94 @@ export default function DashboardPage() {
   const userId = user?.userId || "";
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-6 mt-2">
-      {/* User Info Container */}
-      <div className="w-full max-w-4xl flex flex-col gap-0 items-center justify-start bg-white/90 rounded-2xl shadow-xl p-4 sm:p-8 mt-2 sm:mt-4 border border-gray-100 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-0 w-full text-left">Welcome, {user.name}!</h1>
-        <span className="text-base text-indigo-600 font-medium w-full text-left mt-0">{user.role}</span>
+    <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-0 sm:p-4 md:p-6 mt-2">
+      {/* User Info Card */}
+      <div className="w-full max-w-3xl flex flex-col gap-1 items-center justify-start bg-white/95 rounded-2xl shadow-xl p-4 sm:p-6 mt-2 sm:mt-4 border border-gray-100 mb-4">
+        <div className="flex items-center gap-3 w-full">
+          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-2xl font-bold shadow-sm">
+            {user.name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex flex-col flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">Welcome, {user.name}!</h1>
+            <span className="inline-block mt-1 text-xs sm:text-sm bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full w-fit">Student</span>
+          </div>
+        </div>
       </div>
       {/* Calendar/Table Section */}
       <div className="w-full max-w-3xl mx-auto">
         {showCalendar ? (
           <>
-            <AttendanceCalendar
-              onMonthChange={(year: number, month: number) => {
-                setCalendarYear(year);
-                setCalendarMonth(month);
-              }}
-            />
-            <div className="flex flex-col items-center mt-4">
-              <button
-                className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold text-lg"
-                onClick={async () => {
-                  setDetailsLoading(true);
-                  setDetailsError(null);
-                  setMonthDetails([]);
-                  try {
-                    const token = localStorage.getItem("token");
-                    const year = calendarYear ?? new Date().getFullYear();
-                    const month = (calendarMonth ?? new Date().getMonth()) + 1;
-                    const monthStr = `${year}-${String(month).padStart(2, "0")}`;
-                    const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    if (!res.ok) throw new Error("Failed to fetch details");
-                    const data = await res.json();
-                    setMonthDetails(data.attendance || []);
-                    setShowCalendar(false); // Hide calendar, show table
-                  } catch (err: any) {
-                    setDetailsError(err.message || "Unknown error");
-                  } finally {
-                    setDetailsLoading(false);
-                  }
+            <div className="bg-white/90 rounded-2xl shadow-lg p-3 sm:p-6 border border-gray-100">
+              <AttendanceCalendar
+                onMonthChange={(year: number, month: number) => {
+                  setCalendarYear(year);
+                  setCalendarMonth(month);
                 }}
-                disabled={detailsLoading}
-              >
-                {detailsLoading ? "Loading..." : "Get My Details"}
-              </button>
-              {detailsError && <div className="text-red-600 font-medium mt-2">{detailsError}</div>}
+              />
+              <div className="flex flex-col items-center mt-4 gap-2">
+                <button
+                  className="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition-colors font-semibold text-base sm:text-lg flex items-center gap-2 w-full sm:w-auto justify-center"
+                  onClick={async () => {
+                    setDetailsLoading(true);
+                    setDetailsError(null);
+                    setMonthDetails([]);
+                    try {
+                      const token = localStorage.getItem("token");
+                      const year = calendarYear ?? new Date().getFullYear();
+                      const month = (calendarMonth ?? new Date().getMonth()) + 1;
+                      const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+                      const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      if (!res.ok) throw new Error("Failed to fetch details");
+                      const data = await res.json();
+                      setMonthDetails(data.attendance || []);
+                      setShowCalendar(false); // Hide calendar, show table
+                    } catch (err: any) {
+                      setDetailsError(err.message || "Unknown error");
+                    } finally {
+                      setDetailsLoading(false);
+                    }
+                  }}
+                  disabled={detailsLoading}
+                >
+                  {detailsLoading ? (
+                    <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                  ) : (
+                    <>
+                      <span>Get My Details</span>
+                    </>
+                  )}
+                </button>
+                {detailsError && <div className="text-red-600 font-medium mt-2 text-center w-full">{detailsError}</div>}
+              </div>
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center mt-4">
-            <div className="flex gap-2 mb-4">
+          <div className="bg-white/90 rounded-2xl shadow-lg p-3 sm:p-6 border border-gray-100 flex flex-col items-center mt-0">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full justify-between items-center">
               <button
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium w-full sm:w-auto"
                 onClick={() => setShowCalendar(true)}
               >
                 Back to Calendar
               </button>
               <button
-                className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors"
+                className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors font-medium flex items-center gap-2 w-full sm:w-auto justify-center"
                 onClick={exportTableToPDF}
               >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 Export to PDF
               </button>
             </div>
-            <div className="w-full mt-0 overflow-x-auto">
-              <table className="min-w-full border border-gray-200 rounded-lg">
+            <div className="w-full mt-0 overflow-x-auto rounded-lg border border-indigo-100">
+              <table className="min-w-full text-sm sm:text-base">
                 <thead className="bg-indigo-100">
                   <tr>
-                    <th className="px-3 py-2 text-indigo-700">Date</th>
-                    <th className="px-3 py-2 text-indigo-700">Morning</th>
-                    <th className="px-3 py-2 text-indigo-700">Noon</th>
-                    <th className="px-3 py-2 text-indigo-700">Night</th>
+                    <th className="px-2 sm:px-3 py-2 text-indigo-700">Date</th>
+                    <th className="px-2 sm:px-3 py-2 text-indigo-700">Morning</th>
+                    <th className="px-2 sm:px-3 py-2 text-indigo-700">Noon</th>
+                    <th className="px-2 sm:px-3 py-2 text-indigo-700">Night</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -411,16 +440,38 @@ export default function DashboardPage() {
                       const meals = record ? record.meals : { morning: true, noon: true, night: true };
                       return (
                         <tr key={i} className="border-t">
-                          <td className="px-3 py-2 text-black text-center">{dateStr}</td>
-                          <td className={`px-3 py-2 text-center font-bold ${meals.morning ? 'text-green-600' : 'text-red-600'}`}>{meals.morning ? 'Yes' : 'No'}</td>
-                          <td className={`px-3 py-2 text-center font-bold ${meals.noon ? 'text-green-600' : 'text-red-600'}`}>{meals.noon ? 'Yes' : 'No'}</td>
-                          <td className={`px-3 py-2 text-center font-bold ${meals.night ? 'text-green-600' : 'text-red-600'}`}>{meals.night ? 'Yes' : 'No'}</td>
+                          <td className="px-2 sm:px-3 py-2 text-black text-center whitespace-nowrap">{dateStr}</td>
+                          <td className="px-2 sm:px-3 py-2 text-center font-bold">
+                            {meals.morning ? (
+                              <span className="inline-flex items-center gap-1 text-green-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Yes</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>No</span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center font-bold">
+                            {meals.noon ? (
+                              <span className="inline-flex items-center gap-1 text-green-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Yes</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>No</span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-3 py-2 text-center font-bold">
+                            {meals.night ? (
+                              <span className="inline-flex items-center gap-1 text-green-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Yes</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-red-600"><svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>No</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     });
                   })()}
                 </tbody>
               </table>
+              {/* Feedback if no data */}
+              {monthDetails.length === 0 && (
+                <div className="text-center text-gray-500 py-6 text-base">No attendance data found for this month.</div>
+              )}
             </div>
           </div>
         )}
