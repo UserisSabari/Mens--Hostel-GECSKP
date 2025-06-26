@@ -41,6 +41,9 @@ app.use('/api/attendance', require('./routes/attendance'));
 // Mess Bill routes
 app.use('/api/mess-bill', require('./routes/messBill'));
 
+// Notifications routes
+app.use('/api/notifications', require('./routes/notification'));
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
