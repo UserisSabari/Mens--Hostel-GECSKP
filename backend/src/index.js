@@ -38,6 +38,9 @@ app.use('/api/auth', require('./routes/auth'));
 // Attendance routes
 app.use('/api/attendance', require('./routes/attendance'));
 
+// Mess Bill routes
+app.use('/api/mess-bill', require('./routes/messBill'));
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

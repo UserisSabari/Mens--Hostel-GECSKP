@@ -33,4 +33,26 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+// Shared hook to get current user from JWT
+export function useCurrentUser() {
+  const [user, setUser] = React.useState<{ name: string; email: string; role: string; userId: string } | null>(null);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUser({
+        name: decoded.name || "",
+        email: decoded.email || "",
+        role: decoded.role || "student",
+        userId: decoded.userId || "",
+      });
+    } catch {
+      setUser(null);
+    }
+  }, []);
+  return user;
 } 
