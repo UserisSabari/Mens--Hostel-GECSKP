@@ -119,7 +119,11 @@ export default function DashboardPage() {
       };
     });
     autoTable(doc, { columns, body: rows });
-    doc.save("attendance-details.pdf");
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+    ];
+    const monthName = monthNames[month];
+    doc.save(`attendance-details-${monthName}.pdf`);
   };
 
   if (loading) {
