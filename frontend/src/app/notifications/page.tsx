@@ -2,21 +2,59 @@
 import React, { useEffect, useState } from "react";
 import { useCurrentUser } from "@/context/AuthContext";
 import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
+import { useForm } from "@/utils/useForm";
 
 export default function NotificationsPage() {
   const user = useCurrentUser();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // Admin form state
-  const [form, setForm] = useState({
-    title: "",
-    message: "",
-    pdfUrl: "",
-    type: "",
+  const [genericFormError, setGenericFormError] = useState("");
+
+  // useForm for admin notification form
+  const {
+    values,
+    errors,
+    touched,
+    submitting,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setErrors,
+    setValues,
+  } = useForm({
+    initialValues: { title: "", message: "", pdfUrl: "", type: "" },
+    validate: (vals) => {
+      const errs: any = {};
+      if (!vals.title) errs.title = "Title is required.";
+      if (!vals.pdfUrl) errs.pdfUrl = "PDF link is required.";
+      return errs;
+    },
+    onSubmit: async (vals) => {
+      setErrors({});
+      setGenericFormError("");
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(vals),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add notification");
+        }
+        const data = await res.json();
+        setNotifications([data.notification, ...notifications]);
+        setValues({ title: "", message: "", pdfUrl: "", type: "" });
+      } catch (err: any) {
+        setGenericFormError(err.message || "Failed to add notification");
+      }
+    },
   });
-  const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   // Fetch notifications
   useEffect(() => {
@@ -37,67 +75,36 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, []);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAddNotification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.title || !form.pdfUrl) {
-      setFormError("Title and PDF link are required.");
-      return;
-    }
-    setFormError("");
-    setSubmitting(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to add notification");
-      }
-      const data = await res.json();
-      setNotifications([data.notification, ...notifications]);
-      setForm({ title: "", message: "", pdfUrl: "", type: "" });
-    } catch (err: any) {
-      setFormError(err.message || "Failed to add notification");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 px-2 py-6">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-4 sm:p-8 border border-gray-100 mt-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-indigo-700 mb-6 text-center">Hostel Notifications</h1>
         {user?.role === "admin" && (
-          <form onSubmit={handleAddNotification} className="mb-8 p-4 rounded-xl bg-white border border-indigo-100 flex flex-col gap-4 shadow-sm">
+          <form onSubmit={handleSubmit} className="mb-8 p-4 rounded-xl bg-white border border-indigo-100 flex flex-col gap-4 shadow-sm">
             <div className="flex flex-col">
               <label htmlFor="title" className="text-gray-700 font-medium mb-1 text-sm">Title</label>
               <input
                 id="title"
                 name="title"
                 type="text"
-                value={form.title}
-                onChange={handleFormChange}
-                className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900"
+                value={values.title}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900 ${errors.title && touched.title ? 'border-red-400' : ''}`}
                 required
+                aria-invalid={!!errors.title}
+                aria-describedby="notif-title-error"
               />
+              {errors.title && touched.title && <div id="notif-title-error" className="text-red-500 text-xs mt-1">{errors.title}</div>}
             </div>
             <div className="flex flex-col">
               <label htmlFor="message" className="text-gray-700 font-medium mb-1 text-sm">Message (optional)</label>
               <textarea
                 id="message"
                 name="message"
-                value={form.message}
-                onChange={handleFormChange}
+                value={values.message}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900 min-h-[60px]"
               />
             </div>
@@ -107,12 +114,16 @@ export default function NotificationsPage() {
                 id="pdfUrl"
                 name="pdfUrl"
                 type="url"
-                value={form.pdfUrl}
-                onChange={handleFormChange}
+                value={values.pdfUrl}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Paste PDF link here"
-                className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900"
+                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900 ${errors.pdfUrl && touched.pdfUrl ? 'border-red-400' : ''}`}
                 required
+                aria-invalid={!!errors.pdfUrl}
+                aria-describedby="notif-pdf-error"
               />
+              {errors.pdfUrl && touched.pdfUrl && <div id="notif-pdf-error" className="text-red-500 text-xs mt-1">{errors.pdfUrl}</div>}
             </div>
             <div className="flex flex-col">
               <label htmlFor="type" className="text-gray-700 font-medium mb-1 text-sm">Type (optional)</label>
@@ -120,13 +131,14 @@ export default function NotificationsPage() {
                 id="type"
                 name="type"
                 type="text"
-                value={form.type}
-                onChange={handleFormChange}
+                value={values.type}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="e.g. due, closure, mess-cut"
                 className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900"
               />
             </div>
-            {formError && <div className="text-red-600 text-sm">{formError}</div>}
+            {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
             <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2" disabled={submitting}>{submitting ? "Adding..." : "Add Notification"}</button>
           </form>
         )}

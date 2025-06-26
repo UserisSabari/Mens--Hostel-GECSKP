@@ -366,15 +366,17 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {details.map((d, i) => (
-                    <tr key={i} className="border-t">
+                  {details
+                    .filter(d => d.morning || d.noon || d.night) // Only students with at least one mess cut
+                    .map((d, i) => (
+                      <tr key={i} className="border-t">
                         <td className="px-3 py-2 text-black text-center whitespace-nowrap">{i + 1}</td>
                         <td className="px-3 py-2 text-black whitespace-nowrap">{d.name}</td>
-                      <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
-                      <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
-                      <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
-                    </tr>
-                  ))}
+                        <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
+                        <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
+                        <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

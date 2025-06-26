@@ -2,30 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
 import { useCurrentUser } from "@/context/AuthContext";
-
-// Mock data: Replace with real data or fetch from API/cloud later
-const messBills = [
-  {
-    month: "May 2024",
-    url: "https://drive.google.com/uc?export=download&id=YOUR_FILE_ID_1",
-    previewUrl: "https://drive.google.com/file/d/YOUR_FILE_ID_1/preview",
-  },
-  {
-    month: "April 2024",
-    url: "https://drive.google.com/uc?export=download&id=YOUR_FILE_ID_2",
-    previewUrl: "https://drive.google.com/file/d/YOUR_FILE_ID_2/preview",
-  },
-  // Add more months as needed
-];
-
-// Mock admin check (replace with real auth later)
-const isAdmin = true;
+import { monthNames } from "@/constants/months";
+import { useForm } from "@/utils/useForm";
 
 // Helper for months
-const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
 const currentYear = new Date().getFullYear();
 const years = [currentYear, currentYear - 1, currentYear - 2];
 
@@ -34,15 +14,57 @@ export default function MessBillPage() {
   const [bills, setBills] = useState<any[]>([]);
   const [error, setError] = useState<string>("");
   const user = useCurrentUser();
-  // Admin form state
-  const [form, setForm] = useState({
-    month: months[new Date().getMonth()],
-    year: currentYear,
-    previewUrl: "",
-    url: "",
+  const [genericFormError, setGenericFormError] = useState("");
+
+  // useForm for admin bill form
+  const {
+    values,
+    errors,
+    touched,
+    submitting,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setErrors,
+    setValues,
+  } = useForm({
+    initialValues: {
+      month: monthNames[new Date().getMonth()],
+      year: currentYear,
+      previewUrl: "",
+      url: "",
+    },
+    validate: (vals) => {
+      const errs: any = {};
+      if (!vals.previewUrl) errs.previewUrl = "Preview link is required.";
+      if (!vals.url) errs.url = "Download link is required.";
+      return errs;
+    },
+    onSubmit: async (vals) => {
+      setErrors({});
+      setGenericFormError("");
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/mess-bill", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(vals),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to add bill");
+        }
+        const data = await res.json();
+        setBills([data.bill, ...bills]);
+        setValues({ month: monthNames[new Date().getMonth()], year: currentYear, previewUrl: "", url: "" });
+      } catch (err: any) {
+        setGenericFormError(err.message || "Failed to add bill");
+      }
+    },
   });
-  const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   // Fetch bills from backend
   useEffect(() => {
@@ -63,63 +85,22 @@ export default function MessBillPage() {
     fetchBills();
   }, []);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAddBill = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.previewUrl || !form.url) {
-      setFormError("Both links are required.");
-      return;
-    }
-    setFormError("");
-    setSubmitting(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/mess-bill", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          month: form.month,
-          year: form.year,
-          previewUrl: form.previewUrl,
-          url: form.url,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to add bill");
-      }
-      const data = await res.json();
-      setBills([data.bill, ...bills]);
-      setForm({ month: months[new Date().getMonth()], year: currentYear, previewUrl: "", url: "" });
-    } catch (err: any) {
-      setFormError(err.message || "Failed to add bill");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 px-2 py-6">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-4 sm:p-8 border border-gray-100 mt-4">
         <h1 className="text-xl sm:text-2xl font-semibold text-indigo-700 mb-6 text-center">Monthly Mess Bills</h1>
         {user?.role === "admin" && (
-          <form onSubmit={handleAddBill} className="mb-8 p-4 rounded-xl bg-white border border-indigo-100 flex flex-col gap-4 shadow-sm">
+          <form onSubmit={handleSubmit} className="mb-8 p-4 rounded-xl bg-white border border-indigo-100 flex flex-col gap-4 shadow-sm">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex flex-col flex-1">
                 <label htmlFor="month" className="text-gray-700 font-medium mb-1 text-sm">Month</label>
-                <select id="month" name="month" value={form.month} onChange={handleFormChange} className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900">
-                  {months.map(m => <option key={m} value={m}>{m}</option>)}
+                <select id="month" name="month" value={values.month} onChange={handleChange} onBlur={handleBlur} className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900">
+                  {monthNames.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div className="flex flex-col flex-1">
                 <label htmlFor="year" className="text-gray-700 font-medium mb-1 text-sm">Year</label>
-                <select id="year" name="year" value={form.year} onChange={handleFormChange} className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900">
+                <select id="year" name="year" value={values.year} onChange={handleChange} onBlur={handleBlur} className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900">
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
@@ -130,12 +111,16 @@ export default function MessBillPage() {
                 id="previewUrl"
                 type="url"
                 name="previewUrl"
-                value={form.previewUrl}
-                onChange={handleFormChange}
+                value={values.previewUrl}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Paste preview link here"
-                className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900"
+                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900 ${errors.previewUrl && touched.previewUrl ? 'border-red-400' : ''}`}
                 required
+                aria-invalid={!!errors.previewUrl}
+                aria-describedby="bill-preview-error"
               />
+              {errors.previewUrl && touched.previewUrl && <div id="bill-preview-error" className="text-red-500 text-xs mt-1">{errors.previewUrl}</div>}
             </div>
             <div className="flex flex-col">
               <label htmlFor="url" className="text-gray-700 font-medium mb-1 text-sm">Download Link (Google Drive direct)</label>
@@ -143,14 +128,18 @@ export default function MessBillPage() {
                 id="url"
                 type="url"
                 name="url"
-                value={form.url}
-                onChange={handleFormChange}
+                value={values.url}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Paste download link here"
-                className="rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900"
+                className={`rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 bg-white text-gray-900 ${errors.url && touched.url ? 'border-red-400' : ''}`}
                 required
+                aria-invalid={!!errors.url}
+                aria-describedby="bill-url-error"
               />
+              {errors.url && touched.url && <div id="bill-url-error" className="text-red-500 text-xs mt-1">{errors.url}</div>}
             </div>
-            {formError && <div className="text-red-600 text-sm">{formError}</div>}
+            {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
             <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2" disabled={submitting}>{submitting ? "Adding..." : "Add Bill"}</button>
           </form>
         )}

@@ -5,55 +5,61 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { validateEmail, validatePassword } from "@/utils/validation";
+import { useForm } from "@/utils/useForm";
 
 export default function CreateUserPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [touched, setTouched] = useState<{ name?: boolean; email?: boolean; password?: boolean }>({});
   const router = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Inline validation
-  const nameError = touched.name && !name ? "Name is required" : "";
-  const emailError = touched.email && !validateEmail(email) ? "Enter a valid email address" : "";
-  const passwordError = touched.password && !validatePassword(password) ? "Password must be at least 6 characters" : "";
-  const isFormValid = name && validateEmail(email) && validatePassword(password);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched({ name: true, email: true, password: true });
-    if (!isFormValid) return;
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.message || "Failed to create user");
-        return;
+  // useForm hook
+  const {
+    values,
+    touched,
+    errors,
+    submitting,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setValues,
+    setTouched,
+    setErrors,
+  } = useForm({
+    initialValues: { name: "", email: "", password: "" },
+    validate: (vals) => {
+      const errs: any = {};
+      if (!vals.name) errs.name = "Name is required";
+      if (!validateEmail(vals.email)) errs.email = "Enter a valid email address";
+      if (!validatePassword(vals.password)) errs.password = "Password must be at least 6 characters";
+      return errs;
+    },
+    onSubmit: async (vals) => {
+      setError(null);
+      setSuccess(null);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(vals),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || "Failed to create user");
+          return;
+        }
+        setSuccess("User created successfully! Redirecting...");
+        setTimeout(() => router.push("/dashboard"), 2000);
+      } catch (err: any) {
+        setError(err.message);
       }
-      setSuccess("User created successfully! Redirecting...");
-      setTimeout(() => router.push("/dashboard"), 2000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   // Focus name input on mount
   React.useEffect(() => {
@@ -81,32 +87,34 @@ export default function CreateUserPage() {
               id="name"
               ref={nameInputRef}
               type="text"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-gray-900 placeholder-gray-500 ${nameError ? 'border-red-400' : ''}`}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, name: true }))}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-gray-900 placeholder-gray-500 ${errors.name && touched.name ? 'border-red-400' : ''}`}
+              name="name"
+              value={values.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
               required
-              aria-invalid={!!nameError}
+              aria-invalid={!!errors.name}
               aria-describedby="name-error"
               placeholder="Enter full name"
             />
-            {nameError && <div id="name-error" className="text-red-500 text-xs mt-1">{nameError}</div>}
+            {errors.name && touched.name && <div id="name-error" className="text-red-500 text-xs mt-1">{errors.name}</div>}
           </div>
           <div>
             <label htmlFor="email" className="block text-gray-700 font-medium mb-1">Email</label>
             <input
               id="email"
               type="email"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-gray-900 placeholder-gray-500 ${emailError ? 'border-red-400' : ''}`}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, email: true }))}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base text-gray-900 placeholder-gray-500 ${errors.email && touched.email ? 'border-red-400' : ''}`}
+              name="email"
+              value={values.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
               required
-              aria-invalid={!!emailError}
+              aria-invalid={!!errors.email}
               aria-describedby="email-error"
               placeholder="Enter email address"
             />
-            {emailError && <div id="email-error" className="text-red-500 text-xs mt-1">{emailError}</div>}
+            {errors.email && touched.email && <div id="email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
           </div>
           <div>
             <label htmlFor="password" className="block text-gray-700 font-medium mb-1">Password</label>
@@ -114,12 +122,13 @@ export default function CreateUserPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base pr-12 text-gray-900 placeholder-gray-500 ${passwordError ? 'border-red-400' : ''}`}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onBlur={() => setTouched(t => ({ ...t, password: true }))}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-base pr-12 text-gray-900 placeholder-gray-500 ${errors.password && touched.password ? 'border-red-400' : ''}`}
+                name="password"
+                value={values.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 required
-                aria-invalid={!!passwordError}
+                aria-invalid={!!errors.password}
                 aria-describedby="password-error"
                 placeholder="Enter password"
               />
@@ -138,15 +147,15 @@ export default function CreateUserPage() {
                 )}
               </button>
             </div>
-            {passwordError && <div id="password-error" className="text-red-500 text-xs mt-1">{passwordError}</div>}
+            {errors.password && touched.password && <div id="password-error" className="text-red-500 text-xs mt-1">{errors.password}</div>}
           </div>
           <button
             type="submit"
             className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow text-lg font-semibold flex items-center justify-center disabled:opacity-60"
-            disabled={loading || !isFormValid}
-            aria-disabled={loading || !isFormValid}
+            disabled={submitting || Object.keys(errors).length > 0 || !values.name || !values.email || !values.password}
+            aria-disabled={submitting || Object.keys(errors).length > 0 || !values.name || !values.email || !values.password}
           >
-            {loading ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Creating...</span>) : "Create User"}
+            {submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Creating...</span>) : "Create User"}
           </button>
         </form>
         <div className="mt-6 text-center">

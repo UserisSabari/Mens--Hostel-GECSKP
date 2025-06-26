@@ -5,46 +5,52 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import { useForm } from "@/utils/useForm";
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [genericFormError, setGenericFormError] = useState("");
   const params = useParams();
   const router = useRouter();
-  
   const token = params.token as string;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    
-    setLoading(true);
-    setError("");
-    setMessage("");
-
-    try {
-      const res = await axios.post(`http://localhost:5000/api/auth/reset-password/${token}`, {
-        password,
-      });
-      setMessage(res.data.message);
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        router.push("/login");
-      }, 3000);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "An unexpected error occurred.";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    values,
+    errors,
+    touched,
+    submitting,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setErrors,
+  } = useForm({
+    initialValues: { password: "", confirmPassword: "" },
+    validate: (vals) => {
+      const errs: any = {};
+      if (!vals.password) errs.password = "Password is required.";
+      else if (vals.password.length < 6) errs.password = "Password must be at least 6 characters.";
+      if (!vals.confirmPassword) errs.confirmPassword = "Please confirm your password.";
+      else if (vals.password !== vals.confirmPassword) errs.confirmPassword = "Passwords do not match.";
+      return errs;
+    },
+    onSubmit: async (vals) => {
+      setErrors({});
+      setGenericFormError("");
+      setMessage("");
+      try {
+        const res = await axios.post(`http://localhost:5000/api/auth/reset-password/${token}`, {
+          password: vals.password,
+        });
+        setMessage(res.data.message);
+        setTimeout(() => {
+          router.push("/login");
+        }, 3000);
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.message || "An unexpected error occurred.";
+        setGenericFormError(errorMessage);
+      }
+    },
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50 p-4">
@@ -54,26 +60,37 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="password"
+              name="password"
               placeholder="New Password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.password && touched.password ? 'border-red-400' : ''}`}
+              value={values.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
               required
+              aria-invalid={!!errors.password}
+              aria-describedby="reset-password-error"
             />
+            {errors.password && touched.password && <div id="reset-password-error" className="text-red-500 text-xs mt-1">{errors.password}</div>}
             <input
               type="password"
+              name="confirmPassword"
               placeholder="Confirm New Password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-400' : ''}`}
+              value={values.confirmPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
               required
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby="reset-confirm-error"
             />
+            {errors.confirmPassword && touched.confirmPassword && <div id="reset-confirm-error" className="text-red-500 text-xs mt-1">{errors.confirmPassword}</div>}
+            {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
             <button
               type="submit"
               className="w-full bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition-colors"
-              disabled={loading}
+              disabled={submitting}
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {submitting ? "Resetting..." : "Reset Password"}
             </button>
           </form>
         ) : (
@@ -82,7 +99,6 @@ export default function ResetPasswordPage() {
             <p className="mt-4 text-gray-600">Redirecting to login...</p>
           </div>
         )}
-        {error && <div className="mt-4 p-3 bg-red-100 text-red-700 border border-red-200 rounded-lg">{error}</div>}
       </div>
     </div>
   );
