@@ -40,15 +40,25 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Overlay and Close button for mobile */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <>
+          <div className="fixed inset-0 bg-white/80 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />
+          {/* Large, simple close button outside sidebar */}
+          <button
+            className="fixed top-4 left-4 z-50 md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-lg border border-gray-200 text-3xl text-gray-700 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            &times;
+          </button>
+        </>
       )}
       {/* Sidebar */}
       <aside
-        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-4/5 max-w-xs md:w-56 bg-white border-r border-gray-200 shadow-xl rounded-tr-2xl rounded-br-2xl flex flex-col justify-between z-40 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed top-14 left-0 h-[calc(100vh-56px)] max-h-[calc(100vh-56px)] w-4/5 max-w-xs md:w-56 bg-white border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        <div className="flex-1 flex flex-col gap-3 mt-6 px-3 overflow-y-auto">
+        <div className="flex-1 flex flex-col gap-2 mt-6 px-3 overflow-y-auto">
           {navLinks.map((link, idx) => {
             if (link.hideWhenLoggedIn && isLoggedIn) return null;
             if (link.showWhenLoggedIn && !isLoggedIn) return null;
@@ -56,7 +66,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
               <React.Fragment key={link.href}>
                 <Link
                   href={link.href}
-                  className={`rounded-xl px-4 py-3 font-medium text-base transition-all duration-150 text-gray-700 hover:bg-indigo-50 hover:text-indigo-900 focus:bg-indigo-100 focus:text-indigo-900 active:bg-indigo-100 active:text-indigo-900 flex items-center shadow-sm ${pathname === link.href ? "bg-indigo-100 text-indigo-700 font-semibold border-l-4 border-indigo-400" : ""}`}
+                  className={`rounded-lg px-4 py-3 font-medium text-base transition-colors text-gray-700 hover:bg-indigo-100 hover:text-indigo-900 focus:bg-indigo-200 focus:text-indigo-900 active:bg-indigo-200 active:text-indigo-900 flex items-center ${pathname === link.href ? "bg-indigo-50 text-indigo-700 font-semibold border-l-4 border-indigo-400" : ""}`}
                   onClick={() => setSidebarOpen(false)}
                 >
                   {link.label}
@@ -67,7 +77,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
             );
           })}
         </div>
-        <div className="w-full flex flex-col items-center pb-3 pt-2 border-t border-gray-100 bg-white/95 rounded-b-2xl shadow-inner">
+        <div className="w-full flex flex-col items-center pb-3 pt-2 border-t border-gray-100 bg-white/90">
           {isLoggedIn && (
             <button
               onClick={handleLogout}
