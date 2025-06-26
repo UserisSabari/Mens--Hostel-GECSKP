@@ -2,6 +2,7 @@ const express = require('express');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
+const ExcelJS = require('exceljs');
 
 const router = express.Router();
 
@@ -101,6 +102,126 @@ router.get('/admin/summary', auth, adminOnly, async (req, res) => {
     res.json({ date, summary, details });
   } catch (err) {
     console.error('Admin summary error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/attendance/admin/monthly-report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+router.get('/admin/monthly-report', auth, adminOnly, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'startDate and endDate are required' });
+    }
+    // Get all students
+    const User = require('../models/User');
+    const students = await User.find({ role: 'student' });
+    // Get all attendance records in range
+    const Attendance = require('../models/Attendance');
+    const attendanceRecords = await Attendance.find({
+      date: { $gte: startDate, $lte: endDate },
+    });
+    // Build summary and details
+    const summary = [];
+    const details = [];
+    students.forEach(student => {
+      const studentRecords = attendanceRecords.filter(a => a.userId.toString() === student._id.toString());
+      // Count full mess cuts (all meals false)
+      let totalCuts = 0;
+      const cutDates = [];
+      studentRecords.forEach(rec => {
+        const { morning, noon, night } = rec.meals;
+        if (!morning && !noon && !night) {
+          totalCuts++;
+          cutDates.push(rec.date);
+        }
+      });
+      summary.push({ name: student.name, totalCuts });
+      cutDates.forEach(date => {
+        details.push({ name: student.name, date });
+      });
+    });
+    // Generate Excel
+    const workbook = new ExcelJS.Workbook();
+    // Summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Total Mess Cuts', key: 'totalCuts', width: 20 },
+    ];
+    summary.forEach(row => summarySheet.addRow(row));
+    // Details sheet
+    const detailsSheet = workbook.addWorksheet('Details');
+    detailsSheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Date', key: 'date', width: 20 },
+    ];
+    details.forEach(row => detailsSheet.addRow(row));
+    // Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=mess-cut-report-${startDate}_to_${endDate}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Monthly report error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/attendance/admin/monthly-report
+router.post('/admin/monthly-report', auth, adminOnly, async (req, res) => {
+  try {
+    const { dates } = req.body;
+    if (!dates || !Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ message: 'Dates array is required' });
+    }
+    // Get all students
+    const students = await User.find({ role: 'student' });
+    // Get all attendance records for the given dates
+    const attendanceRecords = await Attendance.find({ date: { $in: dates } });
+    // Build summary and details
+    const summary = [];
+    const details = [];
+    students.forEach(student => {
+      const studentRecords = attendanceRecords.filter(a => a.userId.toString() === student._id.toString());
+      // Count full mess cuts (all meals false)
+      let totalCuts = 0;
+      const cutDates = [];
+      studentRecords.forEach(rec => {
+        const { morning, noon, night } = rec.meals;
+        if (!morning && !noon && !night) {
+          totalCuts++;
+          cutDates.push(rec.date);
+        }
+      });
+      summary.push({ name: student.name, totalCuts });
+      cutDates.forEach(date => {
+        details.push({ name: student.name, date });
+      });
+    });
+    // Generate Excel
+    const workbook = new ExcelJS.Workbook();
+    // Summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Total Mess Cuts', key: 'totalCuts', width: 20 },
+    ];
+    summary.forEach(row => summarySheet.addRow(row));
+    // Details sheet
+    const detailsSheet = workbook.addWorksheet('Details');
+    detailsSheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Date', key: 'date', width: 20 },
+    ];
+    details.forEach(row => detailsSheet.addRow(row));
+    // Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=mess-cut-report-${dates[0]}_to_${dates[dates.length-1]}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Monthly report error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
