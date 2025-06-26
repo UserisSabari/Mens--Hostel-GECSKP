@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
@@ -24,7 +23,7 @@ export default function LoginPage() {
   } = useForm({
     initialValues: { email: "", password: "" },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: Record<string, unknown> = {};
       if (!validateEmail(vals.email)) errs.email = "Please enter a valid email address.";
       if (!validatePassword(vals.password)) errs.password = "Password must be at least 6 characters.";
       return errs;

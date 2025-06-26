@@ -1,7 +1,6 @@
 "use client";
 import React from 'react';
 import { useEffect, useState } from "react";
-import { monthNames } from "@/constants/months";
 
 // Helper to get days in month
 function getDaysInMonth(year: number, month: number) {

@@ -3,7 +3,6 @@
 import React from "react";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import axios from "axios";
 import { useForm } from "@/utils/useForm";
 
@@ -26,7 +25,7 @@ export default function ResetPasswordPage() {
   } = useForm({
     initialValues: { password: "", confirmPassword: "" },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: Record<string, unknown> = {};
       if (!vals.password) errs.password = "Password is required.";
       else if (vals.password.length < 6) errs.password = "Password must be at least 6 characters.";
       if (!vals.confirmPassword) errs.confirmPassword = "Please confirm your password.";

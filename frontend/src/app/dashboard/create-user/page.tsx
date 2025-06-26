@@ -3,7 +3,6 @@ import React from "react";
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import { useForm } from "@/utils/useForm";
 
@@ -23,13 +22,10 @@ export default function CreateUserPage() {
     handleChange,
     handleBlur,
     handleSubmit,
-    setValues,
-    setTouched,
-    setErrors,
   } = useForm({
     initialValues: { name: "", email: "", password: "" },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: Record<string, string> = {};
       if (!vals.name) errs.name = "Name is required";
       if (!validateEmail(vals.email)) errs.email = "Enter a valid email address";
       if (!validatePassword(vals.password)) errs.password = "Password must be at least 6 characters";

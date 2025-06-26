@@ -9,9 +9,17 @@ import { useForm } from "@/utils/useForm";
 const currentYear = new Date().getFullYear();
 const years = [currentYear, currentYear - 1, currentYear - 2];
 
+interface Bill {
+  month: string;
+  year: number;
+  previewUrl: string;
+  url: string;
+  [key: string]: any;
+}
+
 export default function MessBillPage() {
   const [loading, setLoading] = useState(true);
-  const [bills, setBills] = useState<any[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [error, setError] = useState<string>("");
   const user = useCurrentUser();
   const [genericFormError, setGenericFormError] = useState("");

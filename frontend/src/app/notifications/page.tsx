@@ -4,9 +4,19 @@ import { useCurrentUser } from "@/context/AuthContext";
 import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
 import { useForm } from "@/utils/useForm";
 
+interface Notification {
+  _id: string;
+  title: string;
+  message?: string;
+  pdfUrl: string;
+  type?: string;
+  createdAt: string;
+  [key: string]: any;
+}
+
 export default function NotificationsPage() {
   const user = useCurrentUser();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [genericFormError, setGenericFormError] = useState("");

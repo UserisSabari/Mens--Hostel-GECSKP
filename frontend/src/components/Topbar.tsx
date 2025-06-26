@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Dispatch, SetStateAction } from "react";
-import { HiMenu } from "react-icons/hi";
 
 type TopbarProps = {
   setSidebarOpen: Dispatch<SetStateAction<boolean>>;

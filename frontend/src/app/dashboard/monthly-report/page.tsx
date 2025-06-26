@@ -70,7 +70,7 @@ export default function MonthlyReportPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setShowSuccess(true);
-    } catch (err: any) {
+    } catch (err: Record<string, unknown>) {
       setError(err.message || "Failed to download report");
       setShowToast(true);
     } finally {

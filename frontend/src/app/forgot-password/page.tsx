@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   } = useForm({
     initialValues: { email: "" },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: Record<string, unknown> = {};
       if (!vals.email) errs.email = "Email is required.";
       // Simple email regex
       else if (!/^\S+@\S+\.\S+$/.test(vals.email)) errs.email = "Enter a valid email address.";
