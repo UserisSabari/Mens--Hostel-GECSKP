@@ -49,7 +49,7 @@ export default function MonthlyReportPage() {
     try {
       const token = localStorage.getItem("token");
       const dateStrings = selectedDates.map(d => d.toISOString().slice(0, 10));
-      const res = await fetch("http://localhost:5000/api/attendance/admin/monthly-report", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/admin/monthly-report`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
