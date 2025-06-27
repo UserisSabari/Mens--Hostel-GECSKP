@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
+import Spinner from "@/components/Spinner";
 
 function getAllDatesInMonth(year: number, month: number) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -70,8 +71,8 @@ export default function MonthlyReportPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setShowSuccess(true);
-    } catch (err: Record<string, unknown>) {
-      setError(err.message || "Failed to download report");
+    } catch {
+      setError("Failed to download report");
       setShowToast(true);
     } finally {
       setLoading(false);
@@ -80,6 +81,10 @@ export default function MonthlyReportPage() {
 
   const handleSelectAll = () => setSelectedDates(allDates);
   const handleClearAll = () => setSelectedDates([]);
+
+  if (loading) {
+    return <Spinner className="min-h-screen" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-2 sm:p-4">
@@ -204,7 +209,7 @@ export default function MonthlyReportPage() {
           </div>
         )}
         <div className="mt-4 text-center text-xs text-gray-400">
-          <span className="font-semibold">Note:</span> If you see a "report endpoint not found" error, please ensure your backend server is running at <span className="font-mono text-gray-700">http://localhost:5000</span> and the endpoint <span className="font-mono text-gray-700">/api/attendance/admin/monthly-report</span> exists.
+          <span className="font-semibold">Note:</span> If you experience issues downloading the report, please try again later or contact support.
         </div>
       </div>
     </div>

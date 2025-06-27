@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Dispatch, SetStateAction } from "react";
+import Image from 'next/image';
 
 type TopbarProps = {
   setSidebarOpen: Dispatch<SetStateAction<boolean>>;
@@ -22,10 +23,12 @@ export default function Topbar({ setSidebarOpen }: TopbarProps) {
           </svg>
         </button>
         {/* Logo */}
-        <img
+        <Image
           src="/logo.png"
           alt="MH App Logo"
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-indigo-200 shadow bg-white object-cover mr-2"
+          width={32}
+          height={32}
         />
         {/* App Name and Subtitle */}
         <div className="flex flex-col justify-center min-w-0">

@@ -33,7 +33,7 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
+} 
 
 // Shared hook to get current user from JWT
 export function useCurrentUser() {

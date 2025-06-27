@@ -4,6 +4,7 @@ import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi
 import { useCurrentUser } from "@/context/AuthContext";
 import { monthNames } from "@/constants/months";
 import { useForm } from "@/utils/useForm";
+import Spinner from "@/components/Spinner";
 
 // Helper for months
 const currentYear = new Date().getFullYear();
@@ -14,7 +15,7 @@ interface Bill {
   year: number;
   previewUrl: string;
   url: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export default function MessBillPage() {
@@ -43,7 +44,7 @@ export default function MessBillPage() {
       url: "",
     },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: { [key: string]: string } = {};
       if (!vals.previewUrl) errs.previewUrl = "Preview link is required.";
       if (!vals.url) errs.url = "Download link is required.";
       return errs;
@@ -53,7 +54,7 @@ export default function MessBillPage() {
       setGenericFormError("");
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/mess-bill", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -68,8 +69,12 @@ export default function MessBillPage() {
         const data = await res.json();
         setBills([data.bill, ...bills]);
         setValues({ month: monthNames[new Date().getMonth()], year: currentYear, previewUrl: "", url: "" });
-      } catch (err: any) {
-        setGenericFormError(err.message || "Failed to add bill");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setGenericFormError(err.message || "Failed to add bill");
+        } else {
+          setGenericFormError("Failed to add bill");
+        }
       }
     },
   });
@@ -80,18 +85,26 @@ export default function MessBillPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch("http://localhost:5000/api/mess-bill");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill`);
         if (!res.ok) throw new Error("Failed to fetch mess bills");
         const data = await res.json();
         setBills(data.bills || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load mess bills");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || "Failed to load mess bills");
+        } else {
+          setError("Failed to load mess bills");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchBills();
   }, []);
+
+  if (loading) {
+    return <Spinner className="min-h-screen" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 px-2 py-6">
@@ -148,14 +161,10 @@ export default function MessBillPage() {
               {errors.url && touched.url && <div id="bill-url-error" className="text-red-500 text-xs mt-1">{errors.url}</div>}
             </div>
             {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
-            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2" disabled={submitting}>{submitting ? "Adding..." : "Add Bill"}</button>
+            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2 flex items-center justify-center gap-2" disabled={submitting}>{submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Adding...</span>) : "Add Bill"}</button>
           </form>
         )}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="text-center text-red-600 py-12">{error}</div>
         ) : bills.length === 0 ? (
           <div className="text-center text-gray-500 py-12">No mess bills available yet.</div>

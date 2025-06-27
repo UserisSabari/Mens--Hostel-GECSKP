@@ -9,7 +9,7 @@ export default function RulesPage() {
     "Inmates should bring their own beddings, buckets, mug, plate, glass and cutleries (if required).",
     "Rooms are provided with power supply. Electrical installation provided in the rooms should not be tampered with. Any infringement will be dealt with stern action and loss will be recovered from the concerned.",
     "Students should see that the light and fans are switched off while they are leaving the rooms. Reducing electricity and water consumption is a collective responsibility.",
-    "Students are not permitted to have other electrical equipment such as heater, kettle and iron box inside their rooms. If such electrical equipment is found to be in someone's possession, fine will be levied immediately.",
+    "Students are not permitted to have other electrical equipment such as heater, kettle and iron box inside their rooms. If such electrical equipment is found to be in someone&apos;s possession, fine will be levied immediately.",
     "Inmates are not allowed to bring guests into the hostel without permission of the warden.",
     "If you want to vacate from hostel, written request should be submitted to the warden. If you just leave without any intimation, you will be treated as an inmate and expenses will be billed against your name as usual.",
     // Add all rules here
@@ -40,7 +40,7 @@ export default function RulesPage() {
             <li>Students have to take food in the mess hall and they are not permitted to carry food items, plates or spoons from the mess hall to rooms for their personal use.</li>
             <li>Be mindful about wastage of food you take in your platter.</li>
             <li>Minimum allowable mess reduction period at a time will be two days. Those who wish to avail mess cut should note it down in the mess register maintained in the hostel office at least 2 days before the start of mess reduction period.</li>
-            <li>At the end of every month the list of boarder's attendance and the monthly bill will be published. Any discrepancy can be pointed out for correction.</li>
+            <li>At the end of every month the list of boarder&apos;s attendance and the monthly bill will be published. Any discrepancy can be pointed out for correction.</li>
           </ul>
         </section>
         <section className="mb-4">
@@ -50,7 +50,7 @@ export default function RulesPage() {
             <li>Inmates should keep their rooms scrupulously clean. Discarded rags and papers should not be thrown about in the room, terrace and premises. The doors, rooms, walls etc. should not be disfigured by writing, sticking hand bills, posters etc.</li>
             <li>They should behave with restraint and decorum. Shouting, reading aloud, playing music/movies aloud and any acts likely to disturb other inmates should be avoided.</li>
             <li>All members are expected to be in the hostel before 9.30 p.m. Late comers will be admitted only after signing in the late register kept with the matron at LH and security staff at MH.</li>
-            <li>Members are not permitted to convene meetings of any sort anywhere in the hostel or its premises without warden's written sanction obtained on a written requisition. Any gathering, political/religious or of any other nature, which would hamper the peace, harmony and coexistence of inmates will result in serious actions against the perpetrators.</li>
+            <li>Members are not permitted to convene meetings of any sort anywhere in the hostel or its premises without warden&apos;s written sanction obtained on a written requisition. Any gathering, political/religious or of any other nature, which would hamper the peace, harmony and coexistence of inmates will result in serious actions against the perpetrators.</li>
             <li>Inmates should not invite outsiders to the hostel for any purpose.</li>
             <li>While playing TV in the TV room, demand of the majority should be generally considered while choosing programmes/channels.</li>
             <li>Inmates should comply orders and cooperate with the hostel management, in case any water shortage/disruption in water supply occur.</li>

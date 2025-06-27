@@ -54,13 +54,13 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
             if (link.showWhenLoggedIn && !isLoggedIn) return null;
             return (
               <React.Fragment key={link.href}>
-                <Link
-                  href={link.href}
+              <Link
+                href={link.href}
                   className={`rounded-lg px-4 py-3 font-medium text-base transition-colors text-gray-700 hover:bg-indigo-100 hover:text-indigo-900 focus:bg-indigo-200 focus:text-indigo-900 active:bg-indigo-200 active:text-indigo-900 flex items-center ${pathname === link.href ? "bg-indigo-50 text-indigo-700 font-semibold border-l-4 border-indigo-400" : ""}`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                onClick={() => setSidebarOpen(false)}
+              >
+                {link.label}
+              </Link>
                 {/* Divider after each link except last */}
                 {idx < navLinks.length - 1 && <div className="h-px bg-gray-100 my-1 mx-2" />}
               </React.Fragment>

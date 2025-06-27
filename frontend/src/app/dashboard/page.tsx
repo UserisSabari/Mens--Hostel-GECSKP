@@ -4,53 +4,32 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import { useAuth, useCurrentUser } from "@/context/AuthContext";
-import Link from 'next/link';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { monthNames } from "@/constants/months";
-
-function parseJwt(token: string) {
-  try {
-    return JSON.parse(atob(token.split(".")[1]));
-  } catch {
-    return null;
-  }
-}
-
-// Attendance marking window config
-const ATTENDANCE_WINDOW_DAYS = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_WINDOW_DAYS || "7", 10);
-const ATTENDANCE_DEADLINE_HOUR = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_DEADLINE_HOUR || "19", 10);
+import Spinner from "@/components/Spinner";
 
 export default function DashboardPage() {
   const [date, setDate] = useState<string>("");
-  const [summary, setSummary] = useState<any>(null);
-  const [details, setDetails] = useState<any[]>([]);
+  const [summary, setSummary] = useState<Record<string, number> | null>(null);
+  const [details, setDetails] = useState<Array<{ name: string; morning: boolean; noon: boolean; night: boolean }>>([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [monthDetails, setMonthDetails] = useState<any[]>([]);
+  const [monthDetails, setMonthDetails] = useState<Array<{ date: string; meals: { morning: boolean; noon: boolean; night: boolean } }>>([]);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [calendarYear, setCalendarYear] = useState<number | null>(null);
   const [calendarMonth, setCalendarMonth] = useState<number | null>(null);
   const [showCalendar, setShowCalendar] = useState(true);
   const [userCount, setUserCount] = useState<number | null>(null);
-  const [reportStartDate, setReportStartDate] = useState<string>("");
-  const [reportEndDate, setReportEndDate] = useState<string>("");
-  const [reportLoading, setReportLoading] = useState(false);
   const [navLoading, setNavLoading] = React.useState<{[key: string]: boolean}>({});
   const user = useCurrentUser();
 
-  const handleNav = (key: string, href: string, router: any) => {
+  const handleNav = (key: string, href: string, router: ReturnType<typeof useRouter>) => {
     setNavLoading(l => ({ ...l, [key]: true }));
     router.push(href);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    router.push("/login");
   };
 
   // --- Admin summary fetch ---
@@ -62,7 +41,7 @@ export default function DashboardPage() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5000/api/attendance/admin/summary?date=${date}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/admin/summary?date=${date}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -74,8 +53,12 @@ export default function DashboardPage() {
       const data = await res.json();
       setSummary(data.summary);
       setDetails(data.details);
-    } catch (err: any) {
-      setError(err.message || "Unknown error");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Unknown error");
+      } else {
+        setError("Unknown error");
+      }
     } finally {
       setLoadingSummary(false);
     }
@@ -120,10 +103,16 @@ export default function DashboardPage() {
       styles: { fontSize: 10 },
       headStyles: { fillColor: [99, 102, 241] },
       didParseCell: function (data) {
-        const raw = data.cell.raw as any;
-        if (raw && typeof raw === 'object' && raw.styles) {
-          data.cell.styles.textColor = raw.styles.textColor;
-          data.cell.text = raw.text;
+        const raw = data.cell.raw as unknown;
+        if (
+          raw &&
+          typeof raw === 'object' &&
+          'styles' in raw &&
+          'text' in raw
+        ) {
+          const typedRaw = raw as { styles: { textColor: [number, number, number] }, text: string };
+          data.cell.styles.textColor = typedRaw.styles.textColor;
+          data.cell.text = [typedRaw.text];
         }
       },
     });
@@ -165,10 +154,16 @@ export default function DashboardPage() {
         styles: { fontSize: 10 },
         headStyles: { fillColor: [99, 102, 241] },
         didParseCell: function (data) {
-          const raw = data.cell.raw as any;
-          if (raw && typeof raw === 'object' && raw.styles) {
-            data.cell.styles.textColor = raw.styles.textColor;
-            data.cell.text = raw.text;
+          const raw = data.cell.raw as unknown;
+          if (
+            raw &&
+            typeof raw === 'object' &&
+            'styles' in raw &&
+            'text' in raw
+          ) {
+            const typedRaw = raw as { styles: { textColor: [number, number, number] }, text: string };
+            data.cell.styles.textColor = typedRaw.styles.textColor;
+            data.cell.text = [typedRaw.text];
           }
         },
       });
@@ -176,40 +171,12 @@ export default function DashboardPage() {
     doc.save(`mess-cut-summary-${date}.pdf`);
   };
 
-  const handleExportMonthlyReport = async () => {
-    if (!reportStartDate || !reportEndDate) return;
-    setReportLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:5000/api/attendance/admin/monthly-report?startDate=${reportStartDate}&endDate=${reportEndDate}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to generate report");
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `mess-cut-report-${reportStartDate}_to_${reportEndDate}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      alert(err.message || "Failed to download report");
-    } finally {
-      setReportLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (user?.role === "admin") {
       const fetchUserCount = async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch("http://localhost:5000/api/auth/users", {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/users`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (!res.ok) throw new Error("Failed to fetch user count");
@@ -225,9 +192,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
-      </div>
+      <Spinner className="min-h-screen" />
     );
   }
 
@@ -261,7 +226,7 @@ export default function DashboardPage() {
                 disabled={!!navLoading.createUser}
               >
                 {navLoading.createUser ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                  <Spinner className="h-5 w-5" />
                 ) : (
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 )}
@@ -275,18 +240,18 @@ export default function DashboardPage() {
               <span className="text-gray-700 font-medium">Notifications</span>
             </div>
             <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <button
+            <button
                 className="w-full bg-pink-500 text-white px-4 py-2 rounded-lg shadow hover:bg-pink-600 transition-colors font-semibold flex items-center gap-2 justify-center disabled:opacity-60"
                 onClick={() => handleNav('addNotification', '/notifications', router)}
                 disabled={!!navLoading.addNotification}
-              >
+            >
                 {navLoading.addNotification ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                  <Spinner className="h-5 w-5" />
                 ) : (
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 )}
-                Add Notification
-              </button>
+              Add Notification
+            </button>
             </div>
           </div>
           {/* Reports Section */}
@@ -301,7 +266,7 @@ export default function DashboardPage() {
                 disabled={!!navLoading.monthlyReport}
               >
                 {navLoading.monthlyReport ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                  <Spinner className="h-5 w-5" />
                 ) : (
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 )}
@@ -326,7 +291,7 @@ export default function DashboardPage() {
               disabled={!date || loadingSummary}
             >
                 {loadingSummary ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                  <Spinner className="h-5 w-5" />
                 ) : (
                   <span>Get Details</span>
                 )}
@@ -369,14 +334,14 @@ export default function DashboardPage() {
                   {details
                     .filter(d => d.morning || d.noon || d.night) // Only students with at least one mess cut
                     .map((d, i) => (
-                      <tr key={i} className="border-t">
+                    <tr key={i} className="border-t">
                         <td className="px-3 py-2 text-black text-center whitespace-nowrap">{i + 1}</td>
                         <td className="px-3 py-2 text-black whitespace-nowrap">{d.name}</td>
-                        <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
-                        <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
-                        <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
-                      </tr>
-                    ))}
+                      <td className={`px-3 py-2 text-center font-bold ${d.morning ? 'text-red-600' : 'text-green-600'}`}>{d.morning ? 'No' : 'Yes'}</td>
+                      <td className={`px-3 py-2 text-center font-bold ${d.noon ? 'text-red-600' : 'text-green-600'}`}>{d.noon ? 'No' : 'Yes'}</td>
+                      <td className={`px-3 py-2 text-center font-bold ${d.night ? 'text-red-600' : 'text-green-600'}`}>{d.night ? 'No' : 'Yes'}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -430,15 +395,19 @@ export default function DashboardPage() {
                     const year = calendarYear ?? new Date().getFullYear();
                     const month = (calendarMonth ?? new Date().getMonth()) + 1;
                     const monthStr = `${year}-${String(month).padStart(2, "0")}`;
-                    const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`, {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/month?userId=${userId}&month=${monthStr}`, {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     if (!res.ok) throw new Error("Failed to fetch details");
                     const data = await res.json();
                     setMonthDetails(data.attendance || []);
                     setShowCalendar(false); // Hide calendar, show table
-                  } catch (err: any) {
-                    setDetailsError(err.message || "Unknown error");
+                  } catch (err: unknown) {
+                    if (err instanceof Error) {
+                      setDetailsError(err.message || "Unknown error");
+                    } else {
+                      setDetailsError("Unknown error");
+                    }
                   } finally {
                     setDetailsLoading(false);
                   }
@@ -446,7 +415,7 @@ export default function DashboardPage() {
                 disabled={detailsLoading}
               >
                   {detailsLoading ? (
-                    <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                    <Spinner className="h-5 w-5 mr-2" />
                   ) : (
                     <>
                       <span>Get My Details</span>

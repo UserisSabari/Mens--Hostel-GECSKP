@@ -6,7 +6,7 @@ import { useState } from "react";
  * @param validate - A function that receives values and returns an object of errors.
  * @param onSubmit - A function to call when the form is valid and submitted.
  */
-export function useForm<T extends Record<string, any>>({
+export function useForm<T extends Record<string, unknown>>({
   initialValues,
   validate,
   onSubmit,
@@ -23,7 +23,7 @@ export function useForm<T extends Record<string, any>>({
   // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    let fieldValue: any = value;
+    let fieldValue: unknown = value;
     if (type === "checkbox" && e.target instanceof HTMLInputElement) {
       fieldValue = e.target.checked;
     }

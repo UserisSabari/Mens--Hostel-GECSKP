@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useCurrentUser } from "@/context/AuthContext";
 import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
 import { useForm } from "@/utils/useForm";
+import Spinner from "@/components/Spinner";
 
 interface Notification {
   _id: string;
@@ -11,7 +12,7 @@ interface Notification {
   pdfUrl: string;
   type?: string;
   createdAt: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export default function NotificationsPage() {
@@ -35,7 +36,7 @@ export default function NotificationsPage() {
   } = useForm({
     initialValues: { title: "", message: "", pdfUrl: "", type: "" },
     validate: (vals) => {
-      const errs: any = {};
+      const errs: { [key: string]: string } = {};
       if (!vals.title) errs.title = "Title is required.";
       if (!vals.pdfUrl) errs.pdfUrl = "PDF link is required.";
       return errs;
@@ -45,7 +46,7 @@ export default function NotificationsPage() {
       setGenericFormError("");
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/notifications", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notifications`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -60,8 +61,12 @@ export default function NotificationsPage() {
         const data = await res.json();
         setNotifications([data.notification, ...notifications]);
         setValues({ title: "", message: "", pdfUrl: "", type: "" });
-      } catch (err: any) {
-        setGenericFormError(err.message || "Failed to add notification");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setGenericFormError(err.message || "Failed to add notification");
+        } else {
+          setGenericFormError("Failed to add notification");
+        }
       }
     },
   });
@@ -72,18 +77,26 @@ export default function NotificationsPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch("http://localhost:5000/api/notifications");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notifications`);
         if (!res.ok) throw new Error("Failed to fetch notifications");
         const data = await res.json();
         setNotifications(data.notifications || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load notifications");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message || "Failed to load notifications");
+        } else {
+          setError("Failed to load notifications");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchNotifications();
   }, []);
+
+  if (loading) {
+    return <Spinner className="min-h-screen" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 px-2 py-6">
@@ -149,14 +162,10 @@ export default function NotificationsPage() {
               />
             </div>
             {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
-            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2" disabled={submitting}>{submitting ? "Adding..." : "Add Notification"}</button>
+            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2 flex items-center justify-center gap-2" disabled={submitting}>{submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Adding...</span>) : "Add Notification"}</button>
           </form>
         )}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <svg className="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="text-center text-red-600 py-12">{error}</div>
         ) : notifications.length === 0 ? (
           <div className="text-center text-gray-500 py-12">No notifications yet.</div>

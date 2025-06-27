@@ -34,6 +34,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalMeals, setModalMeals] = useState({ morning: true, noon: true, night: true });
   const [loading, setLoading] = useState(false);
+
   let token: string | null = null;
   let userId = "";
   if (typeof window !== "undefined") {
@@ -47,11 +48,6 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
     }
   }
 
-  // If not logged in, render nothing (or a message)
-  if (!userId) {
-    return null;
-  }
-
   // Calculate month navigation limits
   const current = new Date();
   const minMonth = new Date(current.getFullYear(), current.getMonth() - 2, 1);
@@ -60,7 +56,6 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   const isPrevDisabled = viewing <= minMonth;
   const isNextDisabled = viewing >= maxMonth;
 
-  // Fetch attendance for the month (do not fetch for future months)
   useEffect(() => {
     if (onMonthChange) onMonthChange(year, month);
     const fetchAttendance = async () => {
@@ -79,7 +74,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
       setLoading(false);
     };
     if (userId) fetchAttendance();
-  }, [year, month, userId]);
+  }, [year, month, userId, onMonthChange]);
 
   // Open modal to mark attendance
   const openModal = (date: string) => {
@@ -149,7 +144,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
     return now <= deadline && dayDate >= today && dayDate <= windowFromNow;
   };
 
-  return (
+  return !userId ? null : (
     <div className="w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
       <div className="flex justify-between items-center mb-4 px-0">
         <button
@@ -260,7 +255,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
                 { label: 'MORNING', value: 'morning' },
                 { label: 'NOON', value: 'noon' },
                 { label: 'NIGHT', value: 'night' },
-              ].map((meal, idx) => (
+              ].map((meal) => (
                 <div key={meal.value} className="flex items-center justify-between px-4 py-4">
                   <span className="uppercase font-bold text-lg tracking-wide text-fuchsia-600 select-none">
                     {meal.label}

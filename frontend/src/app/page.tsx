@@ -18,7 +18,7 @@ export default function Home() {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('mhapp_splash_shown', '1');
       }
-    }, 1500);
+    }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -30,7 +30,7 @@ export default function Home() {
             key="splash"
             initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.6 } }}
+            exit={{ opacity: 0, transition: { duration: 2.0 } }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-200 via-white to-indigo-100"
             style={{ minHeight: '100vh' }}
           >
@@ -62,11 +62,11 @@ export default function Home() {
             transition={{ delay: showSplash ? 0 : 0.4, duration: 0.6 }}
             className="text-xl sm:text-3xl font-semibold text-center text-indigo-700 mb-1 tracking-tight drop-shadow-sm"
           >
-            Men's Hostel
+            Mens Hostel
           </motion.h1>
           <p className="text-sm sm:text-lg text-gray-800 text-center mb-1 font-normal">
             Welcome to the Mens Hostel of GEC Sreekrishnapuram – a place that over 130 students call their second home. The hostel offers a comfortable and supportive environment for residents to live, learn, and grow together.
-          </p>
+        </p>
           <section className="flex flex-col gap-2">
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 mb-1">
               <HiOutlineUserGroup className="text-lg sm:text-2xl text-indigo-500" />
@@ -91,15 +91,15 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 mt-2 justify-center">
                 <HiOutlineClipboardList className="text-xs sm:text-base text-indigo-400" aria-label="Hostel Clerk" />
                 <span className="font-medium text-gray-900 text-xs sm:text-sm">Hostel Clerk: Rathul</span>
-              </div>
+            </div>
               <div className="flex flex-row items-center gap-2 ml-0 sm:ml-7 mt-1 justify-center">
                 <HiOutlineMail className="text-xs sm:text-sm text-indigo-400" />
                 <a href="mailto:mh@gecskp.ac.in" className="text-indigo-700 underline font-normal hover:text-amber-500 transition-colors text-xs sm:text-sm break-all">mh@gecskp.ac.in</a>
-              </div>
+            </div>
               <div className="flex flex-row items-center gap-2 ml-0 sm:ml-7 mt-1 justify-center">
                 <HiOutlinePhone className="text-xs sm:text-sm text-indigo-400" />
                 <a href="tel:+919745401226" className="text-indigo-700 underline font-normal hover:text-amber-500 transition-colors text-xs sm:text-sm">+91 97454 01226</a>
-              </div>
+            </div>
             </div>
           </section>
           <section className="flex flex-col gap-2">
@@ -108,21 +108,21 @@ export default function Home() {
               <h2 className="text-base sm:text-xl font-medium text-amber-600 tracking-tight">Mess Committee</h2>
             </div>
             <p className="text-gray-700 text-xs sm:text-base font-normal">
-              The Mess Committee, made up of:
-            </p>
+            The Mess Committee, made up of:
+          </p>
             <ul className="list-disc list-inside text-gray-700 ml-4 mb-1 text-xs sm:text-base font-normal">
-              <li>1 Hostel Secretary</li>
-              <li>1 Mess Secretary</li>
-              <li>2 representatives from each year</li>
-            </ul>
+            <li>1 Hostel Secretary</li>
+            <li>1 Mess Secretary</li>
+            <li>2 representatives from each year</li>
+          </ul>
             <p className="text-gray-700 text-xs sm:text-base font-normal">
-              ...takes care of planning the food menu, organizing special meals, maintaining attendance, and handling mess-related decisions.
-            </p>
-          </section>
+            ...takes care of planning the food menu, organizing special meals, maintaining attendance, and handling mess-related decisions.
+          </p>
+        </section>
           <div className="mt-6 text-center text-xs sm:text-sm text-gray-700 flex flex-col gap-2 w-full">
             <span className="block text-base sm:text-lg font-semibold text-indigo-700 mb-2">Contact:</span>
             <div className="flex flex-col gap-2 items-center w-full">
-              {/* Hostel Secretary */}
+            {/* Hostel Secretary */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 w-full">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <HiOutlineUserCircle className="text-sm sm:text-base text-indigo-500" aria-label="Hostel Secretary" />
@@ -130,8 +130,8 @@ export default function Home() {
                   <span className="font-medium text-indigo-700 ml-1">(Hostel Secretary)</span>
                 </div>
                 <a href="tel:+919539240174" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 9539240174</a>
-              </div>
-              {/* Mess Secretary */}
+            </div>
+            {/* Mess Secretary */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 w-full">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <HiOutlineUserCircle className="text-sm sm:text-base text-indigo-500" aria-label="Mess Secretary" />
