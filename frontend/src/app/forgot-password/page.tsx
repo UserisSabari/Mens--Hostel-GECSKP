@@ -52,34 +52,30 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-xs sm:max-w-sm">
         <div className="bg-white/95 rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100 flex flex-col items-center">
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-indigo-700 mb-4">Forgot Password</h1>
-          {submitting ? (
-            <Spinner className="min-h-[120px]" />
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 w-full">
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black bg-white ${errors.email && touched.email ? 'border-red-400' : ''}`}
-                value={values.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                required
-                aria-invalid={!!errors.email}
-                aria-describedby="forgot-email-error"
-              />
-              {errors.email && touched.email && <div id="forgot-email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
-              {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
-              {message && <div className="text-green-600 text-sm">{message}</div>}
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                disabled={submitting || !!message}
-              >
-                {submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Sending...</span>) : "Send Reset Link"}
-              </button>
-            </form>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4 w-full">
+            <input
+              type="email"
+              name="email"
+              placeholder="Your Email"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black bg-white ${errors.email && touched.email ? 'border-red-400' : ''}`}
+              value={values.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              required
+              aria-invalid={!!errors.email}
+              aria-describedby="forgot-email-error"
+            />
+            {errors.email && touched.email && <div id="forgot-email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
+            {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
+            {message && <div className="text-green-600 text-sm">{message}</div>}
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
+              disabled={submitting || !!message}
+            >
+              {submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Sending...</span>) : "Send Reset Link"}
+            </button>
+          </form>
           <div className="mt-6 text-center">
             <Link href="/login" className="text-indigo-600 hover:underline">
               &larr; Back to Login
