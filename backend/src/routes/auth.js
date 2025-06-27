@@ -84,7 +84,8 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     await user.save();
 
     // Create reset URL
-    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const frontendUrls = process.env.FRONTEND_URL.split(',');
+    const resetURL = `${frontendUrls[0]}/reset-password/${resetToken}`; // Use the first one
 
     // --- Send Email ---
     const transporter = nodemailer.createTransport({
