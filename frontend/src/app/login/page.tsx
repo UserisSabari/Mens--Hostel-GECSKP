@@ -6,7 +6,6 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import { useForm } from "@/utils/useForm";
-import Spinner from "@/components/Spinner";
 import Image from 'next/image';
 
 export default function LoginPage() {

@@ -5,7 +5,6 @@ import Link from "next/link";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useForm } from "@/utils/useForm";
-import Spinner from "@/components/Spinner";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
