@@ -6,6 +6,7 @@ const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
+
 //console.log('MONGODB_URI:', process.env.MONGODB_URI);
 
 const app = express();
@@ -28,6 +29,10 @@ app.use(cors({
   },
   credentials: true // if you use cookies/auth
 }));
+
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors());
+
 app.use(express.json()); // Parse JSON bodies
 
 // Rate limiting middleware
@@ -72,4 +77,12 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Global error handler for CORS errors
+app.use(function(err, req, res, next) {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ message: 'CORS error: Not allowed by CORS' });
+  }
+  next(err);
 });

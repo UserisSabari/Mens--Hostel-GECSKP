@@ -15,4 +15,6 @@ services:
         sync: false
       - key: EMAIL_PASS
         sync: false
+      - key: FRONTEND_URL
+        value: https://mens-hostel-gecskp.vercel.app,http://localhost:3000    
     rootDir: backend
