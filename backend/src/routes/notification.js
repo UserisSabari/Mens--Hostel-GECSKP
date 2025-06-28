@@ -5,6 +5,7 @@ const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 // Add a new notification (admin only)
+console.log('Registering notification route: /');
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
     const { title, message, pdfUrl, type } = req.body;
@@ -20,6 +21,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
 });
 
 // Get all notifications (public)
+console.log('Registering notification route: / (GET)');
 router.get('/', async (req, res) => {
   try {
     const notifications = await Notification.find().sort({ createdAt: -1 });
@@ -30,6 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // Delete a notification (admin only)
+console.log('Registering notification route: /:id');
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;

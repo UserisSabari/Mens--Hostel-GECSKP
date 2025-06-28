@@ -18,6 +18,7 @@ const authLimiter = rateLimit({
 });
 
 // Register route (admin only)
+console.log('Registering auth route: /register');
 router.post('/register', auth, adminOnly, async (req, res) => {
   console.log('Headers:', req.headers);
   console.log('req.body:', req.body);
@@ -39,6 +40,7 @@ router.post('/register', auth, adminOnly, async (req, res) => {
 });
 
 // Login route
+console.log('Registering auth route: /login');
 router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,6 +66,7 @@ router.post('/login', authLimiter, async (req, res) => {
 });
 
 // Forgot Password
+console.log('Registering auth route: /forgot-password');
 router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
@@ -124,6 +127,7 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
 });
 
 // Reset Password
+console.log('Registering auth route: /reset-password/:token');
 router.post('/reset-password/:token', authLimiter, async (req, res) => {
   try {
     // 1. Get user based on the hashed token
@@ -155,6 +159,7 @@ router.post('/reset-password/:token', authLimiter, async (req, res) => {
 });
 
 // Get all users (admin only)
+console.log('Registering auth route: /users');
 router.get('/users', auth, adminOnly, async (req, res) => {
   try {
     const users = await User.find({ role: 'student' });

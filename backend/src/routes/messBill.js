@@ -5,6 +5,7 @@ const { auth, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 // Add a new mess bill (admin only)
+console.log('Registering messBill route: /');
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
     const { month, year, previewUrl, url } = req.body;
@@ -20,6 +21,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
 });
 
 // Get all mess bills (public)
+console.log('Registering messBill route: / (GET)');
 router.get('/', async (req, res) => {
   try {
     const bills = await MessBill.find().sort({ year: -1, month: -1 });
@@ -30,6 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // Delete a mess bill (admin only)
+console.log('Registering messBill route: /:id');
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const { id } = req.params;

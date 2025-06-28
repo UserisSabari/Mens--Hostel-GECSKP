@@ -8,6 +8,7 @@ const router = express.Router();
 
 // POST /api/attendance/mark
 // Body: { userId, date (YYYY-MM-DD), meals: { morning, noon, night } }
+console.log('Registering attendance route: /mark');
 router.post('/mark', async (req, res) => {
   try {
     const { userId, date, meals } = req.body;
@@ -53,6 +54,7 @@ router.post('/mark', async (req, res) => {
 });
 
 // GET /api/attendance/month?userId=...&month=YYYY-MM
+console.log('Registering attendance route: /month');
 router.get('/month', async (req, res) => {
   try {
     const { userId, month } = req.query;
@@ -70,6 +72,7 @@ router.get('/month', async (req, res) => {
 });
 
 // GET /api/attendance/admin/summary?date=YYYY-MM-DD
+console.log('Registering attendance route: /admin/summary');
 router.get('/admin/summary', auth, adminOnly, async (req, res) => {
   try {
     const { date } = req.query;
@@ -107,6 +110,7 @@ router.get('/admin/summary', auth, adminOnly, async (req, res) => {
 });
 
 // GET /api/attendance/admin/monthly-report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+console.log('Registering attendance route: /admin/monthly-report (GET)');
 router.get('/admin/monthly-report', auth, adminOnly, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -169,6 +173,7 @@ router.get('/admin/monthly-report', auth, adminOnly, async (req, res) => {
 });
 
 // POST /api/attendance/admin/monthly-report
+console.log('Registering attendance route: /admin/monthly-report (POST)');
 router.post('/admin/monthly-report', auth, adminOnly, async (req, res) => {
   try {
     const { dates } = req.body;

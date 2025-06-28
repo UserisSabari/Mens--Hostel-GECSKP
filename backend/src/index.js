@@ -48,20 +48,25 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // Test route
+console.log('Registering route: /');
 app.get('/', (req, res) => {
   res.send('Mess Management API is running!');
 });
 
 // Auth routes
+console.log('Registering route: /api/auth');
 app.use('/api/auth', require('./routes/auth'));
 
 // Attendance routes
+console.log('Registering route: /api/attendance');
 app.use('/api/attendance', require('./routes/attendance'));
 
 // Mess Bill routes
+console.log('Registering route: /api/mess-bill');
 app.use('/api/mess-bill', require('./routes/messBill'));
 
 // Notifications routes
+console.log('Registering route: /api/notifications');
 app.use('/api/notifications', require('./routes/notification'));
 
 // Connect to MongoDB
