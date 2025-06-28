@@ -27,6 +27,23 @@ export default function DashboardPage() {
   const [navLoading, setNavLoading] = React.useState<{[key: string]: boolean}>({});
   const user = useCurrentUser();
 
+  // Reset all user-specific state when user changes
+  useEffect(() => {
+    if (user) {
+      setDate("");
+      setSummary(null);
+      setDetails([]);
+      setError(null);
+      setMonthDetails([]);
+      setDetailsError(null);
+      setCalendarYear(null);
+      setCalendarMonth(null);
+      setShowCalendar(true);
+      setUserCount(null);
+      setNavLoading({});
+    }
+  }, [user?.userId]); // Reset when userId changes
+
   const handleNav = (key: string, href: string, router: ReturnType<typeof useRouter>) => {
     setNavLoading(l => ({ ...l, [key]: true }));
     router.push(href);
@@ -188,7 +205,7 @@ export default function DashboardPage() {
       };
       fetchUserCount();
     }
-  }, [user]);
+  }, [user?.userId, user?.role]); // Depend on userId and role instead of just user object
 
   if (loading) {
     return (
@@ -378,6 +395,7 @@ export default function DashboardPage() {
           <>
             <div className="bg-white/90 rounded-2xl shadow-lg p-3 sm:p-6 border border-gray-100">
             <AttendanceCalendar
+              key={user?.userId}
               onMonthChange={(year: number, month: number) => {
                 setCalendarYear(year);
                 setCalendarMonth(month);
