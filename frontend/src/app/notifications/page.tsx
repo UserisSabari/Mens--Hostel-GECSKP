@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useCurrentUser } from "@/context/AuthContext";
-import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
+import { HiOutlineDocumentDownload, HiOutlineExternalLink, HiOutlineTrash } from "react-icons/hi";
 import { useForm } from "@/utils/useForm";
 import Spinner from "@/components/Spinner";
 
@@ -20,6 +20,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingNotification, setDeletingNotification] = useState<string | null>(null);
   const [genericFormError, setGenericFormError] = useState("");
 
   // useForm for admin notification form
@@ -70,6 +71,40 @@ export default function NotificationsPage() {
       }
     },
   });
+
+  // Delete notification function
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!confirm("Are you sure you want to delete this notification?")) {
+      return;
+    }
+    
+    setDeletingNotification(notificationId);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/notifications/${notificationId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to delete notification");
+      }
+      
+      // Remove the notification from the local state
+      setNotifications(notifications.filter(notification => notification._id !== notificationId));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to delete notification");
+      } else {
+        setError("Failed to delete notification");
+      }
+    } finally {
+      setDeletingNotification(null);
+    }
+  };
 
   // Fetch notifications
   useEffect(() => {
@@ -197,6 +232,23 @@ export default function NotificationsPage() {
                   >
                     <HiOutlineDocumentDownload className="text-lg" /> Download
                   </a>
+                  {user?.role === "admin" && (
+                    <button
+                      onClick={() => handleDeleteNotification(n._id)}
+                      disabled={deletingNotification === n._id}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete notification"
+                    >
+                      {deletingNotification === n._id ? (
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                      ) : (
+                        <HiOutlineTrash className="text-lg" />
+                      )}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

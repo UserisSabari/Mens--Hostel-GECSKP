@@ -64,10 +64,16 @@ export default function LoginPage() {
             height={64}
           />
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-indigo-700 mb-4">Mess Login</h1>
-          <form onSubmit={handleSubmit} className="space-y-4 w-full">
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-4 w-full"
+            autoComplete="on"
+            action="javascript:void(0)"
+          >
             <div>
-              <label className="block text-gray-600 font-medium mb-1 text-sm">Email</label>
+              <label htmlFor="email" className="block text-gray-600 font-medium mb-1 text-sm">Email</label>
               <input
+                id="email"
                 type="email"
                 name="email"
                 placeholder="Your Email"
@@ -76,14 +82,16 @@ export default function LoginPage() {
                 onBlur={handleBlur}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black text-sm bg-white ${errors.email && touched.email ? 'border-red-400' : ''}`}
                 required
+                autoComplete="username email"
                 aria-invalid={!!errors.email}
                 aria-describedby="login-email-error"
               />
               {errors.email && touched.email && <div id="login-email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1 text-sm">Password</label>
+              <label htmlFor="password" className="block text-gray-600 font-medium mb-1 text-sm">Password</label>
               <input
+                id="password"
                 type="password"
                 name="password"
                 placeholder="Your Password"
@@ -92,6 +100,7 @@ export default function LoginPage() {
                 onBlur={handleBlur}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black text-sm bg-white ${errors.password && touched.password ? 'border-red-400' : ''}`}
                 required
+                autoComplete="current-password"
                 aria-invalid={!!errors.password}
                 aria-describedby="login-password-error"
               />

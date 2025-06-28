@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { HiOutlineDocumentDownload, HiOutlineExternalLink } from "react-icons/hi";
+import { HiOutlineDocumentDownload, HiOutlineExternalLink, HiOutlineTrash } from "react-icons/hi";
 import { useCurrentUser } from "@/context/AuthContext";
 import { monthNames } from "@/constants/months";
 import { useForm } from "@/utils/useForm";
@@ -11,6 +11,7 @@ const currentYear = new Date().getFullYear();
 const years = [currentYear, currentYear - 1, currentYear - 2];
 
 interface Bill {
+  _id: string;
   month: string;
   year: number;
   previewUrl: string;
@@ -22,6 +23,7 @@ export default function MessBillPage() {
   const [loading, setLoading] = useState(true);
   const [bills, setBills] = useState<Bill[]>([]);
   const [error, setError] = useState<string>("");
+  const [deletingBill, setDeletingBill] = useState<string | null>(null);
   const user = useCurrentUser();
   const [genericFormError, setGenericFormError] = useState("");
 
@@ -78,6 +80,40 @@ export default function MessBillPage() {
       }
     },
   });
+
+  // Delete bill function
+  const handleDeleteBill = async (billId: string) => {
+    if (!confirm("Are you sure you want to delete this mess bill?")) {
+      return;
+    }
+    
+    setDeletingBill(billId);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill/${billId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to delete bill");
+      }
+      
+      // Remove the bill from the local state
+      setBills(bills.filter(bill => bill._id !== billId));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Failed to delete bill");
+      } else {
+        setError("Failed to delete bill");
+      }
+    } finally {
+      setDeletingBill(null);
+    }
+  };
 
   // Fetch bills from backend
   useEffect(() => {
@@ -171,9 +207,9 @@ export default function MessBillPage() {
         ) : (
           <ul className="flex flex-col gap-4">
             {bills.map((bill) => (
-              <li key={bill.month + bill.url} className="flex flex-col sm:flex-row items-center justify-between bg-indigo-50 rounded-xl p-4 shadow-sm border border-indigo-100">
+              <li key={bill._id} className="flex flex-col sm:flex-row items-center justify-between bg-indigo-50 rounded-xl p-4 shadow-sm border border-indigo-100">
                 <div className="flex-1 text-center sm:text-left">
-                  <span className="text-base sm:text-lg font-medium text-indigo-800">{bill.month}</span>
+                  <span className="text-base sm:text-lg font-medium text-indigo-800">{bill.month} {bill.year}</span>
                 </div>
                 <div className="flex gap-2 mt-3 sm:mt-0">
                   <a
@@ -193,6 +229,23 @@ export default function MessBillPage() {
                   >
                     <HiOutlineDocumentDownload className="text-lg" /> Download
                   </a>
+                  {user?.role === "admin" && (
+                    <button
+                      onClick={() => handleDeleteBill(bill._id)}
+                      disabled={deletingBill === bill._id}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete bill"
+                    >
+                      {deletingBill === bill._id ? (
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                      ) : (
+                        <HiOutlineTrash className="text-lg" />
+                      )}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

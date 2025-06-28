@@ -43,7 +43,7 @@ function DashboardContent() {
       setUserCount(null);
       setNavLoading({});
     }
-  }, [user?.userId]); // Reset when userId changes
+  }, [user?.userId, user?.role, user]);
 
   const handleNav = (key: string, href: string, router: ReturnType<typeof useRouter>) => {
     setNavLoading(l => ({ ...l, [key]: true }));
@@ -79,6 +79,51 @@ function DashboardContent() {
       }
     } finally {
       setLoadingSummary(false);
+    }
+  };
+
+  // Helper function to handle PDF generation and opening
+  const handlePDFExport = (doc: jsPDF, filename: string) => {
+    // Generate PDF blob
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    // Check if mobile device
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // On mobile, trigger download which should show native file opening popup
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pdfUrl;
+      downloadLink.download = filename;
+      downloadLink.style.display = 'none';
+      
+      // Set proper MIME type to help mobile OS recognize it as PDF
+      downloadLink.setAttribute('type', 'application/pdf');
+      downloadLink.setAttribute('data-downloadurl', `application/pdf:${filename}:${pdfUrl}`);
+      
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Clean up the URL object after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 2000);
+    } else {
+      // On desktop, open in new tab and download
+      window.open(pdfUrl, '_blank');
+      
+      // Also provide download option
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pdfUrl;
+      downloadLink.download = filename;
+      downloadLink.click();
+      
+      // Clean up the URL object after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 2000);
     }
   };
 
@@ -135,7 +180,8 @@ function DashboardContent() {
       },
     });
     const monthName = monthNames[month];
-    doc.save(`attendance-details-${monthName}-${year}.pdf`);
+    
+    handlePDFExport(doc, `Attendance_${monthName}_${year}`);
   };
 
   // Add export summary to PDF
@@ -186,7 +232,8 @@ function DashboardContent() {
         },
       });
     }
-    doc.save(`mess-cut-summary-${date}.pdf`);
+    
+    handlePDFExport(doc, "Mess_Cut_Summary");
   };
 
   useEffect(() => {
