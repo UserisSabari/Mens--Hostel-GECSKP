@@ -18,10 +18,7 @@ const authLimiter = rateLimit({
 });
 
 // Register route (admin only)
-console.log('Registering auth route: /register');
 router.post('/register', auth, adminOnly, async (req, res) => {
-  console.log('Headers:', req.headers);
-  console.log('req.body:', req.body);
   try {
     const { name, email, password, role } = req.body;
     // Check if user already exists
@@ -34,13 +31,11 @@ router.post('/register', auth, adminOnly, async (req, res) => {
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    console.error('Register error:', err); // <-- Add this line
-  res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
 // Login route
-console.log('Registering auth route: /login');
 router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -66,7 +61,6 @@ router.post('/login', authLimiter, async (req, res) => {
 });
 
 // Forgot Password
-console.log('Registering auth route: /forgot-password');
 router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
@@ -120,14 +114,12 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     res.json({ message: 'If your email is registered, you will receive a password reset link.' });
 
   } catch (err) {
-    console.error('FORGOT PASSWORD ERROR:', err);
     // Even if something fails, send a generic response to the user
     res.status(500).json({ message: 'An internal error occurred.' });
   }
 });
 
 // Reset Password
-console.log('Registering auth route: /reset-password/:token');
 router.post('/reset-password/:token', authLimiter, async (req, res) => {
   try {
     // 1. Get user based on the hashed token
@@ -153,13 +145,11 @@ router.post('/reset-password/:token', authLimiter, async (req, res) => {
     res.json({ message: 'Password has been reset successfully.' });
 
   } catch (err) {
-    console.error('RESET PASSWORD ERROR:', err);
     res.status(500).json({ message: 'Error resetting password.' });
   }
 });
 
 // Get all users (admin only)
-console.log('Registering auth route: /users');
 router.get('/users', auth, adminOnly, async (req, res) => {
   try {
     const users = await User.find({ role: 'student' });

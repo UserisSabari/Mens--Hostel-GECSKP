@@ -1,28 +1,15 @@
 // backend/src/index.js
 // Basic Express server setup for Mess Management Web App
 
-console.log('Starting to load modules...');
-
 const express = require('express');
-console.log('Express loaded successfully');
-
 const cors = require('cors');
-console.log('CORS loaded successfully');
-
 require('dotenv').config();
-console.log('Dotenv loaded successfully');
-
 const mongoose = require('mongoose');
-console.log('Mongoose loaded successfully');
-
 const rateLimit = require('express-rate-limit');
-console.log('Rate limit loaded successfully');
 
 //console.log('MONGODB_URI:', process.env.MONGODB_URI);
 
 const app = express();
-console.log('Express app created successfully');
-
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = process.env.FRONTEND_URL
@@ -61,30 +48,21 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // Test route
-console.log('Registering route: /');
 app.get('/', (req, res) => {
   res.send('Mess Management API is running!');
 });
 
 // Auth routes
-console.log('About to load auth routes...');
 app.use('/api/auth', require('./routes/auth'));
-console.log('Auth routes loaded successfully');
 
 // Attendance routes
-console.log('About to load attendance routes...');
 app.use('/api/attendance', require('./routes/attendance'));
-console.log('Attendance routes loaded successfully');
 
 // Mess Bill routes
-console.log('About to load mess bill routes...');
 app.use('/api/mess-bill', require('./routes/messBill'));
-console.log('Mess bill routes loaded successfully');
 
 // Notifications routes
-console.log('About to load notification routes...');
 app.use('/api/notifications', require('./routes/notification'));
-console.log('Notification routes loaded successfully');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
