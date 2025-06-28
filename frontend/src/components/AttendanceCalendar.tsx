@@ -68,7 +68,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
         setLoading(false);
         return;
       }
-      const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/month?userId=${userId}&month=${monthStr}`);
       const data = await res.json();
       setAttendance(data.attendance || []);
       setLoading(false);
@@ -86,7 +86,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   // Handle marking attendance
   const handleMark = async () => {
     setLoading(true);
-    await fetch("http://localhost:5000/api/attendance/mark", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/mark`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, date: selectedDate, meals: modalMeals }),
@@ -94,7 +94,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
     setSelectedDate(null);
     // Refresh attendance
     const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const res = await fetch(`http://localhost:5000/api/attendance/month?userId=${userId}&month=${monthStr}`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/month?userId=${userId}&month=${monthStr}`);
     const data = await res.json();
     setAttendance(data.attendance || []);
     setLoading(false);
