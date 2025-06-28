@@ -23,7 +23,7 @@ type SidebarProps = {
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn, loading } = useAuth();
+  const { isLoggedIn, setIsLoggedIn, loading, updateUserFromToken } = useAuth();
 
   useEffect(() => {
     // This effect can be used for other side-effects if needed,
@@ -35,6 +35,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
+    updateUserFromToken(); // Immediately update user state
+    // Dispatch custom event to notify AuthContext of state change
+    window.dispatchEvent(new Event("authStateChanged"));
     router.push("/login");
   };
 

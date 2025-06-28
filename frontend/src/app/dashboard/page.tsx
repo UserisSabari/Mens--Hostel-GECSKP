@@ -9,7 +9,8 @@ import autoTable from "jspdf-autotable";
 import { monthNames } from "@/constants/months";
 import Spinner from "@/components/Spinner";
 
-export default function DashboardPage() {
+// Wrapper component that forces re-render when user changes
+function DashboardContent() {
   const [date, setDate] = useState<string>("");
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [details, setDetails] = useState<Array<{ name: string; morning: boolean; noon: boolean; night: boolean }>>([]);
@@ -523,5 +524,13 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { user } = useAuth();
+  
+  return (
+    <DashboardContent key={user?.userId || 'no-user'} />
   );
 } 

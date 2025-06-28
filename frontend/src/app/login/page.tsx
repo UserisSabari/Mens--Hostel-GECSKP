@@ -10,7 +10,7 @@ import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setIsLoggedIn } = useAuth();
+  const { setIsLoggedIn, updateUserFromToken } = useAuth();
 
   const {
     values,
@@ -41,6 +41,9 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.message || "Login failed");
       localStorage.setItem("token", data.token);
       setIsLoggedIn(true);
+      updateUserFromToken();
+      // Dispatch custom event to notify AuthContext of state change
+      window.dispatchEvent(new Event("authStateChanged"));
       router.push("/dashboard");
       toast.success("Login successful!");
     } catch (err: unknown) {

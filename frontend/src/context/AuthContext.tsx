@@ -14,6 +14,7 @@ type AuthContextType = {
   setIsLoggedIn: (v: boolean) => void;
   loading: boolean;
   user: User | null;
+  updateUserFromToken: () => void; // Add function to manually update user
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +24,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
+  // Function to update user from token
+  const updateUserFromToken = () => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
     if (token) {
@@ -41,33 +43,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setUser(null);
     }
+  };
+
+  useEffect(() => {
+    updateUserFromToken();
     setLoading(false);
+    
     // Listen for storage changes (cross-tab logout/login)
-    const handler = () => {
-      const token = localStorage.getItem("token");
-      setIsLoggedIn(!!token);
-      if (token) {
-        try {
-          const decoded = JSON.parse(atob(token.split(".")[1]));
-          setUser({
-            name: decoded.name || "",
-            email: decoded.email || "",
-            role: decoded.role || "student",
-            userId: decoded.userId || "",
-          });
-        } catch {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+    const storageHandler = () => {
+      updateUserFromToken();
     };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    
+    // Listen for custom auth events (same-tab logout/login)
+    const authHandler = () => {
+      updateUserFromToken();
+    };
+    
+    window.addEventListener("storage", storageHandler);
+    window.addEventListener("authStateChanged", authHandler);
+    
+    return () => {
+      window.removeEventListener("storage", storageHandler);
+      window.removeEventListener("authStateChanged", authHandler);
+    };
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, loading, user }}>
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, loading, user, updateUserFromToken }}>
       {children}
     </AuthContext.Provider>
   );
