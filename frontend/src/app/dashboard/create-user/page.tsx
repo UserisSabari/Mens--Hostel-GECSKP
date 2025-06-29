@@ -64,7 +64,7 @@ export default function CreateUserPage() {
           {submitting ? (
             <Spinner className="min-h-[120px]" />
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 w-full">
+            <form onSubmit={handleSubmit} className="space-y-4 w-full" autoComplete="on" action="javascript:void(0)">
               <div>
                 <label htmlFor="name" className="block text-gray-700 font-medium mb-1">Name</label>
                 <input
@@ -77,6 +77,7 @@ export default function CreateUserPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
+                  autoComplete="name"
                   aria-invalid={!!errors.name}
                   aria-describedby="name-error"
                   placeholder="Enter full name"
@@ -94,6 +95,7 @@ export default function CreateUserPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
+                  autoComplete="email"
                   aria-invalid={!!errors.email}
                   aria-describedby="email-error"
                   placeholder="Enter email address"
@@ -112,6 +114,7 @@ export default function CreateUserPage() {
                     onChange={handleChange}
                     onBlur={handleBlur}
                   required
+                    autoComplete="new-password"
                     aria-invalid={!!errors.password}
                     aria-describedby="password-error"
                     placeholder="Enter password"
@@ -135,11 +138,15 @@ export default function CreateUserPage() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow text-lg font-semibold flex items-center justify-center disabled:opacity-60"
-                disabled={submitting || Object.keys(errors).length > 0 || !values.name || !values.email || !values.password}
-                aria-disabled={submitting || Object.keys(errors).length > 0 || !values.name || !values.email || !values.password}
+                className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg font-semibold text-base tracking-wide disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={submitting}
               >
-                {submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Creating...</span>) : "Create User"}
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+                    Creating...
+                  </>
+                ) : "Create User"}
               </button>
             </form>
           )}

@@ -51,20 +51,25 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-xs sm:max-w-sm">
         <div className="bg-white/95 rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100 flex flex-col items-center">
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-indigo-700 mb-4">Forgot Password</h1>
-          <form onSubmit={handleSubmit} className="space-y-4 w-full">
-            <input
-              type="email"
-              name="email"
-              placeholder="Your Email"
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black bg-white ${errors.email && touched.email ? 'border-red-400' : ''}`}
-              value={values.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              aria-invalid={!!errors.email}
-              aria-describedby="forgot-email-error"
-            />
-            {errors.email && touched.email && <div id="forgot-email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
+          <form onSubmit={handleSubmit} className="space-y-4 w-full" autoComplete="on" action="javascript:void(0)">
+            <div>
+              <label htmlFor="forgot-email" className="block text-gray-600 font-medium mb-1 text-sm">Email</label>
+              <input
+                id="forgot-email"
+                type="email"
+                name="email"
+                placeholder="Your Email"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black bg-white ${errors.email && touched.email ? 'border-red-400' : ''}`}
+                value={values.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                required
+                autoComplete="email"
+                aria-invalid={!!errors.email}
+                aria-describedby="forgot-email-error"
+              />
+              {errors.email && touched.email && <div id="forgot-email-error" className="text-red-500 text-xs mt-1">{errors.email}</div>}
+            </div>
             {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
             {message && <div className="text-green-600 text-sm">{message}</div>}
             <button

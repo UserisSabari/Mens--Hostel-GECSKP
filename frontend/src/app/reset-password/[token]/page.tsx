@@ -57,33 +57,43 @@ export default function ResetPasswordPage() {
           {submitting ? (
             <Spinner className="min-h-[120px]" />
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 w-full">
-              <input
-                type="password"
-                name="password"
-                placeholder="New Password"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.password && touched.password ? 'border-red-400' : ''}`}
-                value={values.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                required
-                aria-invalid={!!errors.password}
-                aria-describedby="reset-password-error"
-              />
-              {errors.password && touched.password && <div id="reset-password-error" className="text-red-500 text-xs mt-1">{errors.password}</div>}
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm New Password"
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-400' : ''}`}
-                value={values.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                required
-                aria-invalid={!!errors.confirmPassword}
-                aria-describedby="reset-confirm-error"
-              />
-              {errors.confirmPassword && touched.confirmPassword && <div id="reset-confirm-error" className="text-red-500 text-xs mt-1">{errors.confirmPassword}</div>}
+            <form onSubmit={handleSubmit} className="space-y-4 w-full" autoComplete="on" action="javascript:void(0)">
+              <div>
+                <label htmlFor="new-password" className="block text-gray-600 font-medium mb-1 text-sm">New Password</label>
+                <input
+                  id="new-password"
+                  type="password"
+                  name="password"
+                  placeholder="New Password"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.password && touched.password ? 'border-red-400' : ''}`}
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  required
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby="reset-password-error"
+                />
+                {errors.password && touched.password && <div id="reset-password-error" className="text-red-500 text-xs mt-1">{errors.password}</div>}
+              </div>
+              <div>
+                <label htmlFor="confirm-password" className="block text-gray-600 font-medium mb-1 text-sm">Confirm Password</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Confirm New Password"
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 ${errors.confirmPassword && touched.confirmPassword ? 'border-red-400' : ''}`}
+                  value={values.confirmPassword}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  required
+                  autoComplete="new-password"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby="reset-confirm-error"
+                />
+                {errors.confirmPassword && touched.confirmPassword && <div id="reset-confirm-error" className="text-red-500 text-xs mt-1">{errors.confirmPassword}</div>}
+              </div>
               {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
               <button
                 type="submit"
