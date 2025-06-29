@@ -9,7 +9,7 @@ const path = require('path');
 const User = require(path.join(__dirname, '../src/models/User'));
 
 // 1. Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGODB_URI);
 
 // 2. Setup nodemailer
 const transporter = nodemailer.createTransport({
@@ -34,10 +34,27 @@ async function importUsersFromExcel(filePath) {
   let created = 0, skipped = 0, errors = [];
 
   for (const row of rows) {
-    const name = `${row.name}_${row['year of study']}`;
+    // Handle name construction
+    // let baseName = '';
+    // if (row.name) {
+    //   baseName = row.name.replace(/\s+/g, '_');
+    // } else if (row['first name']) {
+    //   const firstName = (row['first name'] || '').trim();
+    //   const lastName = (row['last name'] || '').trim();
+    //   baseName = firstName;
+    //   if (lastName) {
+    //     baseName += `_${lastName}`;
+    //   }
+    //   baseName = baseName.replace(/\s+/g, '_');
+    // } else {
+    //   baseName = 'unknown';
+    // }
+    // const name= `${baseName}_${row['year of study']}`;
+    const name = `${row.name.replace(/\s+/g, '_')}_${row['year of study']}`;
     const email = row.email;
-    const password = generatePassword();
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const password = generatePassword().trim();
+    // Create user with plain password - pre-save hook will hash it
+    const user = new User({ name, email, password, role: 'student' });
 
     // Check for existing user
     const exists = await User.findOne({ email });
@@ -47,7 +64,6 @@ async function importUsersFromExcel(filePath) {
     }
 
     try {
-      const user = new User({ name, email, password: hashedPassword, role: 'student' });
       await user.save();
 
       // Send email
@@ -55,7 +71,7 @@ async function importUsersFromExcel(filePath) {
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your Hostel Mess App Account',
-        text: `Hello ${name},\n\nYour account has been created.\nUsername: ${name}\nEmail: ${email}\nPassword: ${password}\n\nPlease log in and change your password after first login.\n`,
+        text: `Hello ${name},\n\nYour mess account has been created.\nUsername: ${name}\nEmail: ${email}\nPassword: ${password}\n\nPlease log in at https://mens-hostel-gecskp.vercel.app/ using the above credentials.\n`,
       });
 
       created++;
