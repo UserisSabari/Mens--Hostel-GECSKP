@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
@@ -10,7 +10,14 @@ import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setIsLoggedIn, updateUserFromToken } = useAuth();
+  const { setIsLoggedIn, updateUserFromToken, isLoggedIn } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace('/dashboard');
+    }
+  }, [isLoggedIn, router]);
 
   const {
     values,
@@ -44,13 +51,18 @@ export default function LoginPage() {
       updateUserFromToken();
       // Dispatch custom event to notify AuthContext of state change
       window.dispatchEvent(new Event("authStateChanged"));
-      router.push("/dashboard");
+      router.replace("/dashboard"); // Use replace instead of push to prevent back button issues
       toast.success("Login successful!");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "An error occurred");
     }
     },
   });
+
+  // Don't render login form if already authenticated
+  if (isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-pink-50 px-2 py-6">

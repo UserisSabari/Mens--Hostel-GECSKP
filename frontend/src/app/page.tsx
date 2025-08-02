@@ -126,10 +126,10 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 w-full">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <HiOutlineUserCircle className="text-sm sm:text-base text-indigo-500" aria-label="Hostel Secretary" />
-                  <span className="font-medium">Adhithyan K</span>
+                  <span className="font-medium">Harinandhan S J</span>
                   <span className="font-medium text-indigo-700 ml-1">(Hostel Secretary)</span>
                 </div>
-                <a href="tel:+919539240174" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 9539240174</a>
+                <a href="tel:+917356397311" className="text-indigo-600 underline font-normal ml-0 sm:ml-2 hover:text-amber-500 transition-colors block text-xs sm:text-sm py-1 px-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300">+91 7356397311</a>
             </div>
             {/* Mess Secretary */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 w-full">

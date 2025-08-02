@@ -5,27 +5,28 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
+import PWARegistration from "@/components/PWARegistration";
 
 // const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Men's Hostel | GEC SKP",
+  title: "MH App - Mess Management",
   description: "Official Mess Management App for the Men's Hostel at GEC Sreekrishnapuram. Track attendance, view bills, and stay updated.",
   keywords: ['GECSKP', 'Mess', 'Hostel', 'MH', 'GEC Sreekrishnapuram', 'Attendance'],
   authors: [{ name: 'Sabari & Roomies 2.0' }],
   creator: 'Sabari',
   publisher: 'Sabari',
   openGraph: {
-    title: "Men's Hostel | GEC SKP",
+    title: "MH App - Mess Management",
     description: "Official Mess Management App for the Men's Hostel.",
-    url: 'https://your-app-url.com', // Replace with your actual URL
-    siteName: "Men's Hostel App",
+    url: 'https://mens-hostel-gecskp.vercel.app',
+    siteName: "MH App",
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Men's Hostel | GEC Sreekrishnapuram",
+    title: "MH App - Mess Management",
     description: "Official Mess Management App for the Men's Hostel.",
   },
   robots: {
@@ -44,6 +45,9 @@ export const metadata: Metadata = {
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
+  manifest: '/manifest.json',
+  themeColor: '#4f46e5',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
 };
 
 export default function RootLayout({
@@ -58,7 +62,13 @@ export default function RootLayout({
         <meta name="theme-color" content="#4f46e5" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="apple-mobile-web-app-title" content="MH App" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="MH App" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
       </head>
       <body className={`bg-gray-50`}>
         <AuthProvider>
@@ -67,6 +77,7 @@ export default function RootLayout({
         {children}
           </main>
           <Toaster position="top-center" />
+          <PWARegistration />
         </AuthProvider>
       </body>
     </html>

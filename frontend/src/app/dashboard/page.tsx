@@ -28,6 +28,24 @@ function DashboardContent() {
   const [navLoading, setNavLoading] = React.useState<{[key: string]: boolean}>({});
   const user = useCurrentUser();
 
+  // Handle back button to prevent going back to login
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // If user is logged in and tries to go back, prevent navigation to login
+      if (isLoggedIn && window.location.pathname === '/login') {
+        event.preventDefault();
+        router.replace('/dashboard');
+        return;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isLoggedIn, router]);
+
   // Reset all user-specific state when user changes
   useEffect(() => {
     if (user) {

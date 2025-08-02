@@ -149,6 +149,17 @@ const config: Config = {
 
   // The test environment that will be used for testing
   testEnvironment: "jsdom",
+  
+  // Transform TypeScript files
+  transform: {
+    "^.+\\.(ts|tsx)$": "ts-jest",
+    "^.+\\.(js|jsx)$": "babel-jest",
+  },
+  
+  // Module name mapping for path aliases
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
