@@ -8,4 +8,8 @@ const messBillSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Add indexes for frequently queried fields
+messBillSchema.index({ year: -1, month: -1 });
+messBillSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('MessBill', messBillSchema); 

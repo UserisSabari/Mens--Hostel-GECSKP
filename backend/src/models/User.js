@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: { type: Date, required: false },
 }, { timestamps: true });
 
+// Add indexes for frequently queried fields
+// `email` already has `unique: true` on the schema path above —
+// avoid re-declaring the same index which causes duplicate index warnings.
+// userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ resetPasswordToken: 1 });
+
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();

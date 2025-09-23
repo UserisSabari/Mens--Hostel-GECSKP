@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 // import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import QueryProvider from "@/providers/QueryProvider";
 import Header from "@/components/Header";
 import { Toaster } from "react-hot-toast";
 import PWARegistration from "@/components/PWARegistration";
+import ClientInserts from "@/components/ClientInserts";
 
 // const inter = Inter({ subsets: ["latin"] });
 
@@ -46,8 +48,14 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: '#4f46e5',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
 };
 
 export default function RootLayout({
@@ -71,14 +79,17 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
       </head>
       <body className={`bg-gray-50`}>
-        <AuthProvider>
-          <Header />
-          <main className="pt-14 md:pl-56 bg-white min-h-screen">
-        {children}
-          </main>
-          <Toaster position="top-center" />
-          <PWARegistration />
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <Header />
+            <main className="pt-14 md:pl-56 bg-white min-h-screen">
+          {children}
+            </main>
+            <Toaster position="top-center" />
+            <PWARegistration />
+            <ClientInserts />
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

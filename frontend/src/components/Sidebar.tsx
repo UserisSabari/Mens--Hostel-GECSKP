@@ -23,7 +23,7 @@ type SidebarProps = {
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, setIsLoggedIn, loading, updateUserFromToken } = useAuth();
+  const { isLoggedIn, loading, logout } = useAuth();
 
   useEffect(() => {
     // This effect can be used for other side-effects if needed,
@@ -32,12 +32,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
 
   if (loading) return null; // Simplified loading state check
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    updateUserFromToken(); // Immediately update user state
-    // Dispatch custom event to notify AuthContext of state change
-    window.dispatchEvent(new Event("authStateChanged"));
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

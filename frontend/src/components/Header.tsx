@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import KeepAlivePing from "./KeepAlivePing";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
@@ -19,6 +20,7 @@ export default function Header() {
 
   return (
     <>
+      <KeepAlivePing />
       <Topbar setSidebarOpen={setSidebarOpen} />
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
     </>

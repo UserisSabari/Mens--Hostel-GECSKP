@@ -6,6 +6,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import { useForm } from "@/utils/useForm";
+import { api } from "@/utils/api";
 import Image from 'next/image';
 
 export default function LoginPage() {
@@ -39,20 +40,21 @@ export default function LoginPage() {
     onSubmit: async (vals) => {
       setErrors({});
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(vals),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed");
-      localStorage.setItem("token", data.token);
-      setIsLoggedIn(true);
-      updateUserFromToken();
-      // Dispatch custom event to notify AuthContext of state change
-      window.dispatchEvent(new Event("authStateChanged"));
-      router.replace("/dashboard"); // Use replace instead of push to prevent back button issues
-      toast.success("Login successful!");
+      const response = await api.post('/api/auth/login', vals);
+      if (response.error) throw new Error(response.error);
+      
+      const token = (response.data as { token?: string } | undefined)?.token;
+      if (token) {
+        localStorage.setItem("token", token);
+        setIsLoggedIn(true);
+        updateUserFromToken();
+        // Dispatch custom event to notify AuthContext of state change
+        window.dispatchEvent(new Event("authStateChanged"));
+        router.replace("/dashboard"); // Use replace instead of push to prevent back button issues
+        toast.success("Login successful!");
+      } else {
+        throw new Error("Login failed");
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "An error occurred");
     }

@@ -149,10 +149,18 @@ const config: Config = {
 
   // The test environment that will be used for testing
   testEnvironment: "jsdom",
-  
-  // Transform TypeScript files
+
+  // Transform TypeScript files with ts-jest and ensure TSX is compiled
+  // (tsconfig for tests forces jsx to react-jsx so ts-jest emits valid JSX output)
   transform: {
-    "^.+\\.(ts|tsx)$": "ts-jest",
+    "^.+\\.(ts|tsx)$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "jsx": "react-jsx"
+        }
+      }
+    ],
     "^.+\\.(js|jsx)$": "babel-jest",
   },
   

@@ -41,8 +41,9 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-    // Create JWT
-    const token = jwt.sign(
+    
+    // Create access token (short-lived)
+    const accessToken = jwt.sign(
       {
         userId: user._id,
         role: user.role,
@@ -50,9 +51,30 @@ router.post('/login', authLimiter, async (req, res) => {
         email: user.email
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '15m' } // Short-lived access token
     );
-    res.json({ token, user: { name: user.name, email: user.email, role: user.role } });
+    
+    // Create refresh token (long-lived)
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Set refresh token as HttpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      // Use lax so cross-site navigations can still include the cookie
+      // when frontend and backend are on different domains/subdomains.
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+    
+    res.json({ 
+      token: accessToken, 
+      user: { name: user.name, email: user.email, role: user.role } 
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -145,6 +167,64 @@ router.post('/reset-password/:token', authLimiter, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Error resetting password.' });
   }
+});
+
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.cookies;
+    
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'No refresh token provided' });
+    }
+    
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+    
+    // Generate new access token
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role,
+        name: user.name,
+        email: user.email
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+    
+    res.json({ 
+      token: accessToken,
+      user: { name: user.name, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid refresh token' });
+  }
+});
+
+// Get current user endpoint
+router.get('/me', auth, async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ user: { name: user.name, email: user.email, role: user.role, userId: user._id } });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Logout endpoint
+router.post('/logout', (req, res) => {
+  res.clearCookie('refreshToken');
+  res.json({ message: 'Logged out successfully' });
 });
 
 // Get all users (admin only)

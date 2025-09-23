@@ -8,4 +8,8 @@ const notificationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Add indexes for frequently queried fields
+notificationSchema.index({ createdAt: -1 });
+notificationSchema.index({ type: 1 });
+
 module.exports = mongoose.model('Notification', notificationSchema); 

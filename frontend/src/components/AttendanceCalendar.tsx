@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { useEffect, useState } from "react";
+import { useAttendance, useMarkAttendance } from '@/hooks/useApi';
 
 // Helper to get days in month
 function getDaysInMonth(year: number, month: number) {
@@ -12,16 +13,16 @@ function getWeekday(year: number, month: number, day: number) {
   return new Date(year, month, day).getDay();
 }
 
-// Types
-interface Attendance {
-  date: string; // YYYY-MM-DD
-  meals: { morning: boolean; noon: boolean; night: boolean };
-}
-
 // Add prop type
 interface AttendanceCalendarProps {
   onMonthChange?: (year: number, month: number) => void;
 }
+
+// Local type for attendance items
+type AttendanceRecord = {
+  date: string; // YYYY-MM-DD
+  meals: { morning: boolean; noon: boolean; night: boolean };
+};
 
 const ATTENDANCE_WINDOW_DAYS = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_WINDOW_DAYS || "7", 10);
 const ATTENDANCE_DEADLINE_HOUR = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_DEADLINE_HOUR || "19", 10);
@@ -30,23 +31,19 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-indexed
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalMeals, setModalMeals] = useState({ morning: true, noon: true, night: true });
-  const [loading, setLoading] = useState(false);
 
-  let token: string | null = null;
-  let userId = "";
-  if (typeof window !== "undefined") {
-    token = localStorage.getItem("token");
-    if (token) {
-      try {
-        userId = JSON.parse(atob(token.split(".")[1])).userId;
-      } catch {
-        userId = "";
-      }
-    }
-  }
+  // Determine whether a user token exists (component is client-only)
+  const isLoggedInClient = typeof window !== 'undefined' && !!localStorage.getItem('token');
+
+  // Get month string for API call
+  const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
+  
+  // Use React Query hooks - disable when not logged in to avoid unnecessary queries
+  const queryMonth = isLoggedInClient ? monthStr : '';
+  const { data: attendance = [] as AttendanceRecord[], isLoading, error } = useAttendance(queryMonth);
+  const markAttendanceMutation = useMarkAttendance();
 
   // Calculate month navigation limits
   const current = new Date();
@@ -58,46 +55,28 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
 
   useEffect(() => {
     if (onMonthChange) onMonthChange(year, month);
-    const fetchAttendance = async () => {
-      setLoading(true);
-      const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
-      // Only fetch if not in the future
-      const now = new Date();
-      if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth())) {
-        setAttendance([]);
-        setLoading(false);
-        return;
-      }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/month?userId=${userId}&month=${monthStr}`);
-      const data = await res.json();
-      setAttendance(data.attendance || []);
-      setLoading(false);
-    };
-    if (userId) fetchAttendance();
-  }, [year, month, userId, onMonthChange]);
+  }, [year, month, onMonthChange]);
 
   // Open modal to mark attendance
   const openModal = (date: string) => {
-    const record = attendance.find(a => a.date === date);
+    const record = attendance.find((a: AttendanceRecord) => a.date === date);
     setModalMeals(record ? record.meals : { morning: true, noon: true, night: true });
     setSelectedDate(date);
   };
 
   // Handle marking attendance
   const handleMark = async () => {
-    setLoading(true);
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/mark`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, date: selectedDate, meals: modalMeals }),
-    });
-    setSelectedDate(null);
-    // Refresh attendance
-    const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/attendance/month?userId=${userId}&month=${monthStr}`);
-    const data = await res.json();
-    setAttendance(data.attendance || []);
-    setLoading(false);
+    if (!selectedDate) return;
+    
+    try {
+      await markAttendanceMutation.mutateAsync({
+        date: selectedDate,
+        meals: modalMeals,
+      });
+      setSelectedDate(null);
+    } catch (error) {
+      console.error('Failed to mark attendance:', error);
+    }
   };
 
   // Calendar grid
@@ -107,7 +86,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
 
   // Get attendance status for a day
   const getStatus = (date: string) => {
-    const record = attendance.find(a => a.date === date);
+    const record = attendance.find((a: AttendanceRecord) => a.date === date);
     if (!record) return "unmarked";
     const { morning, noon, night } = record.meals;
     if (!morning && !noon && !night) return "messcut";
@@ -144,7 +123,22 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
     return now <= deadline && dayDate >= today && dayDate <= windowFromNow;
   };
 
-  return !userId ? null : (
+  const loading = isLoading || markAttendanceMutation.isPending;
+
+  if (error) {
+    return (
+      <div className="w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
+        <div className="text-center text-red-600 py-8">
+          Failed to load attendance data. Please try again.
+        </div>
+      </div>
+    );
+  }
+
+  // If not logged in on the client, render nothing (test and app expectation)
+  if (!isLoggedInClient) return null;
+
+  return (
     <div className="w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
       <div className="flex justify-between items-center mb-4 px-0">
         <button

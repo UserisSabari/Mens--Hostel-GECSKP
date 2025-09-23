@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { validateEmail, validatePassword } from "@/utils/validation";
 import { useForm } from "@/utils/useForm";
+import { useCreateUser } from "@/hooks/useApi";
 import Spinner from "@/components/Spinner";
 
 export default function CreateUserPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const createUserMutation = useCreateUser();
 
   // useForm hook
   const {
@@ -32,19 +34,8 @@ export default function CreateUserPage() {
     },
     onSubmit: async (vals) => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-          body: JSON.stringify(vals),
-      });
-      if (!res.ok) {
-          return;
-      }
-        setTimeout(() => router.push("/dashboard"), 2000);
+      await createUserMutation.mutateAsync(vals);
+      setTimeout(() => router.push("/dashboard"), 2000);
     } catch (err: unknown) {
         console.error(err);
       }
@@ -61,7 +52,7 @@ export default function CreateUserPage() {
       <div className="w-full max-w-xs sm:max-w-sm">
         <div className="bg-white/95 rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100 flex flex-col items-center">
           <h1 className="text-xl sm:text-2xl font-semibold text-center text-indigo-700 mb-4">Create User</h1>
-          {submitting ? (
+          {submitting || createUserMutation.isPending ? (
             <Spinner className="min-h-[120px]" />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 w-full" autoComplete="on" action="javascript:void(0)">
@@ -139,9 +130,9 @@ export default function CreateUserPage() {
               <button
                 type="submit"
                 className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg font-semibold text-base tracking-wide disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                disabled={submitting}
+                disabled={submitting || createUserMutation.isPending}
               >
-                {submitting ? (
+                {submitting || createUserMutation.isPending ? (
                   <>
                     <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                     Creating...

@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { HiOutlineDocumentDownload, HiOutlineExternalLink, HiOutlineTrash } from "react-icons/hi";
 import { useCurrentUser } from "@/context/AuthContext";
 import { monthNames } from "@/constants/months";
 import { useForm } from "@/utils/useForm";
+import { useMessBills, useCreateMessBill, useDeleteMessBill } from "@/hooks/useApi";
 import Spinner from "@/components/Spinner";
 
 // Helper for months
@@ -20,12 +21,14 @@ interface Bill {
 }
 
 export default function MessBillPage() {
-  const [loading, setLoading] = useState(true);
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [error, setError] = useState<string>("");
   const [deletingBill, setDeletingBill] = useState<string | null>(null);
   const user = useCurrentUser();
   const [genericFormError, setGenericFormError] = useState("");
+  
+  // Use React Query hooks
+  const { data: bills = [], isLoading: loading, error } = useMessBills();
+  const createBillMutation = useCreateMessBill();
+  const deleteBillMutation = useDeleteMessBill();
 
   // useForm for admin bill form
   const {
@@ -55,21 +58,7 @@ export default function MessBillPage() {
       setErrors({});
       setGenericFormError("");
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(vals),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || "Failed to add bill");
-        }
-        const data = await res.json();
-        setBills([data.bill, ...bills]);
+        await createBillMutation.mutateAsync(vals);
         setValues({ month: monthNames[new Date().getMonth()], year: currentYear, previewUrl: "", url: "" });
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -89,57 +78,29 @@ export default function MessBillPage() {
     
     setDeletingBill(billId);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill/${billId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to delete bill");
-      }
-      
-      // Remove the bill from the local state
-      setBills(bills.filter(bill => bill._id !== billId));
+      await deleteBillMutation.mutateAsync(billId);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to delete bill");
-      } else {
-        setError("Failed to delete bill");
-      }
+      console.error('Failed to delete bill:', err);
     } finally {
       setDeletingBill(null);
     }
   };
 
-  // Fetch bills from backend
-  useEffect(() => {
-    const fetchBills = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/mess-bill`);
-        if (!res.ok) throw new Error("Failed to fetch mess bills");
-        const data = await res.json();
-        setBills(data.bills || []);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message || "Failed to load mess bills");
-        } else {
-          setError("Failed to load mess bills");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBills();
-  }, []);
+  // Bills are now fetched automatically by React Query
 
   if (loading) {
     return <Spinner className="min-h-screen" />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -206,7 +167,7 @@ export default function MessBillPage() {
           <div className="text-center text-gray-500 py-12">No mess bills available yet.</div>
         ) : (
           <ul className="flex flex-col gap-4">
-            {bills.map((bill) => (
+            {bills.map((bill: Bill) => (
               <li key={bill._id} className="flex flex-col sm:flex-row items-center justify-between bg-indigo-50 rounded-xl p-4 shadow-sm border border-indigo-100">
                 <div className="flex-1 text-center sm:text-left">
                   <span className="text-base sm:text-lg font-medium text-indigo-800">{bill.month} {bill.year}</span>

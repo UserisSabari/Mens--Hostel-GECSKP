@@ -1,62 +1,90 @@
 const express = require('express');
+const csrf = require('csurf');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 const ExcelJS = require('exceljs');
 
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
+});
+
 const router = express.Router();
 
 // POST /api/attendance/mark
-// Body: { userId, date (YYYY-MM-DD), meals: { morning, noon, night } }
-router.post('/mark', async (req, res) => {
+// Body: { date (YYYY-MM-DD), meals: { morning, noon, night } }
+router.post('/mark', auth, csrfProtection, async (req, res) => {
   try {
-    const { userId, date, meals } = req.body;
-    if (!userId || !date || !meals) {
+    const { date, meals } = req.body;
+    const userId = req.user.userId; // Get userId from authenticated user
+    if (!date || !meals) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // --- Date Validation ---
-    const requestedDate = new Date(date);
-    requestedDate.setHours(0, 0, 0, 0);
+    // --- Date Validation (strict YYYY-MM-DD) ---
+    const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    if (!DATE_RE.test(date)) {
+      return res.status(400).json({ message: 'Invalid date format. Expected YYYY-MM-DD' });
+    }
 
+    // Use UTC midnight to avoid timezone shifts when converting dates
+    const requestedDate = new Date(`${date}T00:00:00Z`);
+    if (isNaN(requestedDate.getTime()) || requestedDate.toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ message: 'Invalid date' });
+    }
+
+    // Deadline: 19:00 UTC on the day before the requested date
     const deadline = new Date(requestedDate);
-    deadline.setDate(requestedDate.getDate() - 1);
-    deadline.setHours(19, 0, 0, 0); // Deadline is 7 PM the day before.
+    deadline.setUTCDate(requestedDate.getUTCDate() - 1);
+    deadline.setUTCHours(19, 0, 0, 0);
 
     const now = new Date();
-
-    if (now > deadline) {
+    if (now.getTime() > deadline.getTime()) {
       return res.status(400).json({ message: `Deadline to mark for ${date} has passed.` });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const sevenDaysFromNow = new Date(today);
-    sevenDaysFromNow.setDate(today.getDate() + 7);
-
-    if (requestedDate > sevenDaysFromNow) {
-      return res.status(400).json({ message: "Cannot mark attendance more than 7 days in advance." });
+    // Max 7 days in advance (based on UTC date)
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const sevenDaysFromNow = new Date(todayUTC);
+    sevenDaysFromNow.setUTCDate(todayUTC.getUTCDate() + 7);
+    if (requestedDate.getTime() > sevenDaysFromNow.getTime()) {
+      return res.status(400).json({ message: 'Cannot mark attendance more than 7 days in advance.' });
     }
-    // --- End Validation ---
 
     // Upsert attendance (update if exists, insert if not)
-    const attendance = await Attendance.findOneAndUpdate(
-      { userId, date },
-      { meals },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    res.json({ message: 'Attendance marked', attendance });
+    // Use $set and $setOnInsert to guarantee required fields are present on insert
+    let attendance;
+    try {
+      attendance = await Attendance.findOneAndUpdate(
+        { userId, date },
+        { $set: { meals }, $setOnInsert: { userId, date } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } catch (err) {
+      // Handle duplicate key race (two requests trying to insert simultaneously)
+      if (err && err.code === 11000) {
+        attendance = await Attendance.findOne({ userId, date });
+      } else {
+        throw err;
+      }
+    }
+    return res.json({ message: 'Attendance marked', attendance });
   } catch (err) {
     console.error('Attendance mark error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
-// GET /api/attendance/month?userId=...&month=YYYY-MM
-router.get('/month', async (req, res) => {
+// GET /api/attendance/month?month=YYYY-MM
+router.get('/month', auth, async (req, res) => {
   try {
-    const { userId, month } = req.query;
-    if (!userId || !month) {
+    const { month } = req.query;
+    const userId = req.user.userId; // Get userId from authenticated user
+    if (!month) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     // Find all attendance records for the user in the given month
@@ -82,21 +110,30 @@ router.get('/admin/summary', auth, adminOnly, async (req, res) => {
     const attendanceMap = {};
     attendanceRecords.forEach(a => { attendanceMap[a.userId.toString()] = a; });
     // Prepare details and summary
+    // summary counts number of absentees per meal
     let summary = { morning: 0, noon: 0, night: 0 };
     const details = users.map(user => {
       const att = attendanceMap[user._id.toString()];
-      const morning = att ? !att.meals.morning : false;
-      const noon = att ? !att.meals.noon : false;
-      const night = att ? !att.meals.night : false;
-      if (morning) summary.morning++;
-      if (noon) summary.noon++;
-      if (night) summary.night++;
+      // morning/noon/night are stored as boolean = present (true) by Attendance model
+      // For clarity, compute explicit 'absent' flags. Keep the old keys (morning/noon/night)
+      // as boolean absent for backward compatibility with the frontend.
+      const morningAbsent = att ? !att.meals.morning : false;
+      const noonAbsent = att ? !att.meals.noon : false;
+      const nightAbsent = att ? !att.meals.night : false;
+      if (morningAbsent) summary.morning++;
+      if (noonAbsent) summary.noon++;
+      if (nightAbsent) summary.night++;
       return {
         name: user.name,
         email: user.email,
-        morning,
-        noon,
-        night
+        // existing shape used by frontend: morning=true indicates 'No' (absent)
+        morning: morningAbsent,
+        noon: noonAbsent,
+        night: nightAbsent,
+        // explicit, clearer fields for future use
+        morningAbsent,
+        noonAbsent,
+        nightAbsent,
       };
     });
     res.json({ date, summary, details });
