@@ -3,7 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AttendanceCalendar from "@/components/AttendanceCalendar";
 import { useAuth, useCurrentUser } from "@/context/AuthContext";
-import { useAttendanceSummary, useUsers, useAttendance, SummaryDetail } from "@/hooks/useApi";
+import { useAttendanceSummary, useUsers, useAttendance } from "@/hooks/useApi";
+import type { SummaryDetail } from '@/types';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { monthNames } from "@/constants/months";
@@ -181,8 +182,7 @@ function DashboardContent() {
         { header: "Noon", dataKey: "noon" },
         { header: "Night", dataKey: "night" },
       ];
-    type SummaryDetail = { name: string; morning?: boolean; noon?: boolean; night?: boolean; morningAbsent?: boolean; noonAbsent?: boolean; nightAbsent?: boolean };
-    const rows = attendanceSummary.details.map((d: SummaryDetail, i: number) => {
+  const rows = attendanceSummary.details.map((d: SummaryDetail, i: number) => {
       // Prefer explicit 'XxxAbsent' flags if present, otherwise fall back to legacy boolean
       const morningAbsent = typeof d.morningAbsent === 'boolean' ? d.morningAbsent : !!d.morning;
       const noonAbsent = typeof d.noonAbsent === 'boolean' ? d.noonAbsent : !!d.noon;

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
@@ -8,6 +8,7 @@ import { validateEmail, validatePassword } from "@/utils/validation";
 import { useForm } from "@/utils/useForm";
 import { api } from "@/utils/api";
 import Image from 'next/image';
+import Spinner from '@/components/Spinner';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -125,12 +126,7 @@ export default function LoginPage() {
               className="w-full bg-indigo-600 text-white py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-lg font-semibold text-base tracking-wide disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={submitting}
             >
-              {submitting ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-                  Logging in...
-                </>
-              ) : "Login"}
+              {submitting ? (<><Spinner className="h-5 w-5 mr-2 text-white" />Logging in...</>) : "Login"}
             </button>
           </form>
         </div>

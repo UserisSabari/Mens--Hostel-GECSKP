@@ -1,57 +1,108 @@
 "use client";
 import { useEffect } from 'react';
 
+// Define the BeforeInstallPromptEvent interface
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
+// Extend Window interface to include our custom property
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+  interface Window {
+    triggerPWAInstall?: () => Promise<boolean>;
+  }
+}
+
 export default function PWARegistration() {
   useEffect(() => {
     // Register service worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered: ', registration);
-          })
-          .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-          });
+      window.addEventListener('load', async () => {
+        try {
+          // Check if there's an existing registration
+          const existing = await navigator.serviceWorker.getRegistration();
+          if (existing?.active) {
+            // Update existing service worker
+            existing.update().catch(console.error);
+          } else {
+            // Register new service worker
+            await navigator.serviceWorker.register('/sw.js', {
+              scope: '/',
+              updateViaCache: 'none'
+            });
+          }
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
+        }
+      });
+
+      // Handle service worker updates
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // Optional: Show update notification to user
+        if (window.confirm('New version available! Reload to update?')) {
+          window.location.reload();
+        }
       });
     }
 
     // Handle PWA installation prompt
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let deferredPrompt: Event | null = null;
+    let deferredPrompt: BeforeInstallPromptEvent | null = null;
     
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
-      // Stash the event so it can be triggered later
       deferredPrompt = e;
       
-      // Show custom install prompt if needed
-      // You can add a custom install button here
-      console.log('PWA install prompt available');
+      // Dispatch event for UI to show install button
+      window.dispatchEvent(new CustomEvent('pwaInstallable'));
     });
 
     // Handle app installed event
     window.addEventListener('appinstalled', () => {
-      console.log('PWA was installed');
       deferredPrompt = null;
+      // Dispatch event for UI to hide install button
+      window.dispatchEvent(new CustomEvent('pwaInstalled'));
     });
 
     // Handle offline/online status
     const handleOnline = () => {
-      console.log('App is online');
+      document.body.classList.remove('offline');
+      // Attempt to revalidate cached data
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'ONLINE_SYNC' });
+      }
     };
 
     const handleOffline = () => {
-      console.log('App is offline');
+      document.body.classList.add('offline');
     };
+
+    // Set initial offline status
+    if (!navigator.onLine) handleOffline();
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Expose PWA install prompt for other components
+    window.triggerPWAInstall = async () => {
+      if (!deferredPrompt) return false;
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      return outcome === 'accepted';
+    };
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      delete window.triggerPWAInstall;
     };
   }, []);
 

@@ -5,20 +5,15 @@ import { useCurrentUser } from "@/context/AuthContext";
 import { monthNames } from "@/constants/months";
 import { useForm } from "@/utils/useForm";
 import { useMessBills, useCreateMessBill, useDeleteMessBill } from "@/hooks/useApi";
+import type { Bill } from '@/types';
 import Spinner from "@/components/Spinner";
+import { FormButton, IconButton } from '@/components/ui';
 
 // Helper for months
 const currentYear = new Date().getFullYear();
 const years = [currentYear, currentYear - 1, currentYear - 2];
 
-interface Bill {
-  _id: string;
-  month: string;
-  year: number;
-  previewUrl: string;
-  url: string;
-  [key: string]: unknown;
-}
+
 
 export default function MessBillPage() {
   const [deletingBill, setDeletingBill] = useState<string | null>(null);
@@ -33,14 +28,13 @@ export default function MessBillPage() {
   // useForm for admin bill form
   const {
     values,
-    errors,
+    setValues,
     touched,
+    errors,
     submitting,
     handleChange,
     handleBlur,
     handleSubmit,
-    setErrors,
-    setValues,
   } = useForm({
     initialValues: {
       month: monthNames[new Date().getMonth()],
@@ -55,7 +49,6 @@ export default function MessBillPage() {
       return errs;
     },
     onSubmit: async (vals) => {
-      setErrors({});
       setGenericFormError("");
       try {
         await createBillMutation.mutateAsync(vals);
@@ -158,7 +151,7 @@ export default function MessBillPage() {
               {errors.url && touched.url && <div id="bill-url-error" className="text-red-500 text-xs mt-1">{errors.url}</div>}
             </div>
             {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
-            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2 flex items-center justify-center gap-2" disabled={submitting}>{submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Adding...</span>) : "Add Bill"}</button>
+            <FormButton type="submit" className="w-full mt-2" loading={submitting}>Add Bill</FormButton>
           </form>
         )}
         {error ? (
@@ -191,21 +184,15 @@ export default function MessBillPage() {
                     <HiOutlineDocumentDownload className="text-lg" /> Download
                   </a>
                   {user?.role === "admin" && (
-                    <button
+                    <IconButton
                       onClick={() => handleDeleteBill(bill._id)}
                       disabled={deletingBill === bill._id}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 rounded-lg"
                       title="Delete bill"
+                      loading={deletingBill === bill._id}
                     >
-                      {deletingBill === bill._id ? (
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                        </svg>
-                      ) : (
-                        <HiOutlineTrash className="text-lg" />
-                      )}
-                    </button>
+                      <HiOutlineTrash className="text-lg" />
+                    </IconButton>
                   )}
                 </div>
               </li>

@@ -5,16 +5,8 @@ import { HiOutlineDocumentDownload, HiOutlineExternalLink, HiOutlineTrash } from
 import { useForm } from "@/utils/useForm";
 import { useNotifications, useCreateNotification, useDeleteNotification } from "@/hooks/useApi";
 import Spinner from "@/components/Spinner";
-
-interface Notification {
-  _id: string;
-  title: string;
-  message?: string;
-  pdfUrl: string;
-  type?: string;
-  createdAt: string;
-  [key: string]: unknown;
-}
+import { FormButton, IconButton } from '@/components/ui'
+import type { NotificationItem } from '@/types';
 
 export default function NotificationsPage() {
   const user = useCurrentUser();
@@ -35,7 +27,6 @@ export default function NotificationsPage() {
     handleChange,
     handleBlur,
     handleSubmit,
-    setErrors,
     setValues,
   } = useForm({
     initialValues: { title: "", message: "", pdfUrl: "", type: "" },
@@ -46,7 +37,6 @@ export default function NotificationsPage() {
       return errs;
     },
     onSubmit: async (vals) => {
-      setErrors({});
       setGenericFormError("");
       try {
         await createNotificationMutation.mutateAsync(vals);
@@ -158,7 +148,7 @@ export default function NotificationsPage() {
               />
             </div>
             {genericFormError && <div className="text-red-600 text-sm">{genericFormError}</div>}
-            <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold mt-2 flex items-center justify-center gap-2" disabled={submitting}>{submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Adding...</span>) : "Add Notification"}</button>
+            <FormButton type="submit" className="w-full mt-2" loading={submitting}>Add Notification</FormButton>
           </form>
         )}
         {error ? (
@@ -167,7 +157,7 @@ export default function NotificationsPage() {
           <div className="text-center text-gray-500 py-12">No notifications yet.</div>
         ) : (
           <ul className="flex flex-col gap-4">
-            {notifications.map((n: Notification) => (
+            {notifications.map((n: NotificationItem) => (
               <li key={n._id} className="flex flex-col sm:flex-row items-center justify-between bg-indigo-50 rounded-xl p-4 shadow-sm border border-indigo-100">
                 <div className="flex-1 text-center sm:text-left">
                   <span className="text-base sm:text-lg font-medium text-indigo-800">{n.title}</span>
@@ -194,21 +184,15 @@ export default function NotificationsPage() {
                     <HiOutlineDocumentDownload className="text-lg" /> Download
                   </a>
                   {user?.role === "admin" && (
-                    <button
+                    <IconButton
                       onClick={() => handleDeleteNotification(n._id)}
                       disabled={deletingNotification === n._id}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 shadow transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 rounded-lg"
                       title="Delete notification"
+                      loading={deletingNotification === n._id}
                     >
-                      {deletingNotification === n._id ? (
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                        </svg>
-                      ) : (
-                        <HiOutlineTrash className="text-lg" />
-                      )}
-                    </button>
+                      <HiOutlineTrash className="text-lg" />
+                    </IconButton>
                   )}
                 </div>
               </li>

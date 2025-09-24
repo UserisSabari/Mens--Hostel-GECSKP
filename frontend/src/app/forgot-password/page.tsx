@@ -5,6 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useForm } from "@/utils/useForm";
+import Spinner from '@/components/Spinner';
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
@@ -77,7 +78,7 @@ export default function ForgotPasswordPage() {
               className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
               disabled={submitting || !!message}
             >
-              {submitting ? (<span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Sending...</span>) : "Send Reset Link"}
+              {submitting ? (<><Spinner className="h-5 w-5 mr-2 text-white" />Sending...</>) : "Send Reset Link"}
             </button>
           </form>
           <div className="mt-6 text-center">

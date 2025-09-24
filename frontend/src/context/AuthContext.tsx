@@ -1,20 +1,13 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "@/utils/api";
-
-// Add user type
-interface User {
-  name: string;
-  email: string;
-  role: string;
-  userId: string;
-}
+import type { UserData } from '@/types';
 
 type AuthContextType = {
   isLoggedIn: boolean;
   setIsLoggedIn: (v: boolean) => void;
   loading: boolean;
-  user: User | null;
+  user: UserData | null;
   updateUserFromToken: () => void; // Add function to manually update user
   logout: () => void; // Add logout function
 };
@@ -24,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
 
   // Function to update user from token (fallback)
   const updateUserFromToken = useCallback(() => {
@@ -77,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Try to fetch user from server first
         try {
           const response = await api.get('/api/auth/me');
-          const data = response.data as { user?: User } | undefined;
+    const data = response.data as { user?: UserData } | undefined;
           if (data?.user) {
             setUser(data.user);
             setIsLoggedIn(true);

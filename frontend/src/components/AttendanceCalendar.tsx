@@ -1,7 +1,8 @@
 "use client";
-import React from 'react';
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import { useAttendance, useMarkAttendance } from '@/hooks/useApi';
+import type { AttendanceItem } from '@/types';
+import Spinner from '@/components/Spinner';
 
 // Helper to get days in month
 function getDaysInMonth(year: number, month: number) {
@@ -18,11 +19,8 @@ interface AttendanceCalendarProps {
   onMonthChange?: (year: number, month: number) => void;
 }
 
-// Local type for attendance items
-type AttendanceRecord = {
-  date: string; // YYYY-MM-DD
-  meals: { morning: boolean; noon: boolean; night: boolean };
-};
+// Use the centralized AttendanceItem type
+type AttendanceRecord = AttendanceItem;
 
 const ATTENDANCE_WINDOW_DAYS = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_WINDOW_DAYS || "7", 10);
 const ATTENDANCE_DEADLINE_HOUR = parseInt(process.env.NEXT_PUBLIC_ATTENDANCE_DEADLINE_HOUR || "19", 10);
@@ -139,7 +137,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
   if (!isLoggedInClient) return null;
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
+    <div className="relative w-full max-w-3xl mx-auto p-2 sm:p-6 bg-white/95 rounded-2xl shadow-xl border border-gray-100">
       <div className="flex justify-between items-center mb-4 px-0">
         <button
           onClick={() => {
@@ -227,7 +225,7 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
       {/* Loading spinner overlay */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-20 rounded-2xl">
-          <svg className="animate-spin h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+          <Spinner className="h-10 w-10 text-indigo-500" />
         </div>
       )}
       {/* Modal */}
@@ -268,13 +266,14 @@ export default function AttendanceCalendar({ onMonthChange }: AttendanceCalendar
               ))}
             </div>
             <button
-              className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition text-lg font-semibold shadow mt-2 mb-1 active:scale-95"
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition text-lg font-semibold shadow mt-2 mb-1 active:scale-95 flex items-center justify-center"
               onClick={handleMark}
               disabled={loading}
               aria-label="Save Attendance"
               title="Save Attendance"
             >
-              {loading ? "Saving..." : "Save Attendance"}
+              {loading ? <Spinner className="h-5 w-5 mr-2" /> : null}
+              <span>{loading ? 'Saving...' : 'Save Attendance'}</span>
             </button>
             <button className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition text-base font-medium shadow border border-gray-200 active:scale-95" onClick={() => setSelectedDate(null)} disabled={loading} aria-label="Cancel" title="Cancel">
               Cancel

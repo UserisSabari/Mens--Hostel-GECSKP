@@ -1,116 +1,84 @@
-const CACHE_NAME = 'mh-app-v3';
-const STATIC_CACHE = 'mh-app-static-v3';
+const VERSION = '4.0.0';
+const CACHE_NAME = `mh-app-v${VERSION}`;
 
-// Install event - cache static resources
+// Files to cache
+const CACHE_FILES = [
+  '/',
+  '/login',
+  '/dashboard',
+  '/manifest.json',
+  '/logo.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/favicon-16x16.png',
+  '/offline.html'
+];
+
+// Cache files when service worker is installed
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      console.log('Opened static cache');
-      return cache.addAll([
-        '/',
-        '/login',
-        '/manifest.json',
-        '/logo.png',
-        '/icon-512.png'
-      ]);
-    }).then(() => {
-      return self.skipWaiting();
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CACHE_FILES))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches and claim clients
+// Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      return self.clients.claim();
-    })
+    caches.keys()
+      .then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(name => {
+            if (name !== CACHE_NAME) {
+              return caches.delete(name);
+            }
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - implement different strategies for different types of requests
+// Handle fetch requests
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
   
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-  
-  // API requests - BYPASS SERVICE WORKER CACHE COMPLETELY to avoid
-  // serving stale or user-mixed responses that depend on Authorization.
+  // Don't cache API requests
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
-  
-  // Navigation requests - avoid caching HTML shell; always network-first
+
+  // Network-first for navigation
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(async () => {
-      // Offline fallback to cached root if available
-      const cache = await caches.open(STATIC_CACHE);
-      return cache.match('/') || new Response('Offline', { status: 503 });
-    }));
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match('/'))
+    );
     return;
   }
-  
-  // Static assets - cache first
-  event.respondWith(handleStaticRequest(event.request));
-});
 
-async function handleNavigationRequest(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match('/');
-  
-  // Fetch fresh content in background
-  const fetchPromise = fetch(request).then((networkResponse) => {
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  }).catch(() => cachedResponse);
-  
-  // Return cached version immediately, or fetch if no cache
-  return cachedResponse || fetchPromise;
-}
-
-async function handleStaticRequest(request) {
-  const cache = await caches.open(STATIC_CACHE);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    return new Response('Offline', { status: 503 });
-  }
-}
-
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(doBackgroundSync());
-  }
-});
-
-function doBackgroundSync() {
-  // Handle background sync tasks
-  console.log('Background sync triggered');
-  return Promise.resolve();
-} 
+  // Cache-first for static assets
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).then(response => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        });
+      })
+      .catch(() => new Response('Offline'))
+  );
+}); 
